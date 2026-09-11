@@ -1,0 +1,18 @@
+# Normalize line endings so a checkout on Windows never produces CRLF noise
+# in diffs. LF in the repository, LF in the working tree.
+* text=eol=lf
+
+# Files that must never be altered by text normalization.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.pdf   binary
+*.zip   binary
+*.ttf   binary
+*.woff  binary
+*.woff2 binary
+
+# Keep generated lockfiles out of diff noise in pull requests.
+package-lock.json  linguist-generated=true -diff
