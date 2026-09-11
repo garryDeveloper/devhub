@@ -8,10 +8,10 @@ Everything needed to run DevHub on your machine, with no AWS account.
 
 | Tool | Version | Check |
 |---|---|---|
-| .NET SDK | 8.0+ | `dotnet --version` |
+| .NET SDK | 10.0+ | `dotnet --version` |
 | Node.js | 20 LTS+ | `node -v` |
 | Docker Desktop | latest | `docker ps` |
-| EF Core tools | 8.x | `dotnet tool install --global dotnet-ef` |
+| EF Core tools | 10.x | `dotnet tool install --global dotnet-ef` |
 | Expo Go (phone) or an emulator | — | for mobile |
 
 ---

@@ -1,6 +1,6 @@
 # Backend architecture
 
-ASP.NET Core 8, modular monolith, four projects, one deployable.
+ASP.NET Core 10, modular monolith, four projects, one deployable.
 
 ---
 
@@ -63,10 +63,11 @@ api/
 │   │   ├── Controllers/
 │   │   ├── Middleware/          # correlation id, exception handling
 │   │   ├── Filters/
-│   │   ├── Extensions/          # AddApplication(), AddInfrastructure()
-│   │   ├── Program.cs
+│   │   ├── Extensions/          # API-only helpers (ProblemDetails mapping, results)
+│   │   ├── Program.cs           # composition root: AddApplication() + AddInfrastructure()
 │   │   └── appsettings*.json
 │   ├── DevHub.Application/
+│   │   ├── DependencyInjection.cs   # AddApplication()
 │   │   ├── Common/              # Result, PagedResult, ICurrentUser, interfaces
 │   │   ├── Auth/
 │   │   ├── Workspaces/
@@ -94,6 +95,7 @@ api/
 │   │   ├── CICD/
 │   │   └── Notifications/
 │   └── DevHub.Infrastructure/
+│       ├── DependencyInjection.cs   # AddInfrastructure(IConfiguration)
 │       ├── Persistence/
 │       │   ├── DevHubDbContext.cs
 │       │   ├── Configurations/  # IEntityTypeConfiguration per entity
@@ -135,9 +137,25 @@ Not full CQRS — one database, no event sourcing. But commands and queries are 
 - **Queries** bypass repositories and project directly from `DbContext` with `AsNoTracking()`
   and `.Select(...)` into a DTO. Never load a whole aggregate just to read one field.
 
-Use MediatR if you want the pipeline behaviours (validation, logging, transactions) for free;
-plain injected handler classes are equally acceptable. Decide once in DEVHUB-002 and stay
-consistent.
+**Decision (DEVHUB-002): plain handler classes, no MediatR.** Controllers inject the exact
+handler interface they need and call it:
+
+```csharp
+public interface ICommandHandler<in TCommand, TResponse>
+{
+    Task<TResponse> HandleAsync(TCommand command, CancellationToken cancellationToken);
+}
+
+public interface IQueryHandler<in TQuery, TResponse>
+{
+    Task<TResponse> HandleAsync(TQuery query, CancellationToken cancellationToken);
+}
+```
+
+`AddApplication()` registers every implementation of these in the assembly as scoped. The
+dependency is visible in the constructor and "go to definition" lands on the handler rather
+than on `IMediator.Send`. The cost is that pipeline behaviours are not free — they are added
+as decorators over these two interfaces when a ticket first needs them.
 
 Pipeline behaviours, in order:
 

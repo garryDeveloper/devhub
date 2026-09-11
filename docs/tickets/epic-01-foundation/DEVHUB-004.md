@@ -21,7 +21,7 @@ now means "works on my machine" never becomes a deployment problem later.
 
 ## Tasks
 
-- [ ] Multi-stage `api/Dockerfile`: `sdk:8.0` to restore/publish, `aspnet:8.0-alpine` to run.
+- [ ] Multi-stage `api/Dockerfile`: `sdk:10.0` to restore/publish, `aspnet:10.0-alpine` to run.
 - [ ] Copy `.csproj` files and restore **before** copying the source, so layer caching works.
 - [ ] Run as a non-root user; expose port 8080; set `ASPNETCORE_URLS=http://+:8080`.
 - [ ] Add `.dockerignore` (bin, obj, node_modules, .git, tests, docs).

@@ -24,7 +24,7 @@ architecture test project.
 
 - [ ] `dotnet new sln -n DevHub` in `api/`.
 - [ ] Create `src/DevHub.Api` (webapi), `src/DevHub.Application`, `src/DevHub.Domain`,
-      `src/DevHub.Infrastructure` (classlib), all targeting .NET 8.
+      `src/DevHub.Infrastructure` (classlib), all targeting .NET 10.
 - [ ] Wire references: `Api → Application`, `Api → Infrastructure` (composition root only),
       `Application → Domain`, `Infrastructure → Application, Domain`.
 - [ ] Add `Domain/Common`: `Entity`, `AggregateRoot`, `IDomainEvent`, `DomainException`.

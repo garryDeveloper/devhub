@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\DevHub.Domain\DevHub.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- IServiceCollection for AddApplication(); no ASP.NET, no hosting. -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
+  </ItemGroup>
+
+</Project>

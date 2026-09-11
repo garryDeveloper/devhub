@@ -45,7 +45,7 @@ pattern, domain event collection hook, the first migration (users table only).
 ## Technical notes
 
 - Enums as `text`, not `int`: readable in psql and immune to accidental reordering of the C# enum.
-- Guid v7 for ids (`Guid.CreateVersion7()` in .NET 9, or a small helper in .NET 8) keeps B-tree
+- Guid v7 for ids (`Guid.CreateVersion7()`, available since .NET 9) keeps B-tree
   index inserts sequential; random v4 guids fragment the index.
 - Do not put migrations in the Api project. They belong with the persistence code.
 

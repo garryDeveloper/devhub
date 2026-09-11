@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The innermost layer. It references nothing: no project, no NuGet package.
+    An empty <ItemGroup> here is the point of the whole architecture — if this file
+    ever grows a package or project reference, DomainPurityRules fails the build.
+  -->
+
+</Project>

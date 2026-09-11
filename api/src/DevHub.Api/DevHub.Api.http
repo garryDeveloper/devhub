@@ -1,0 +1,7 @@
+@DevHub.Api_HostAddress = http://localhost:5258
+
+### Placeholder endpoint (DEVHUB-002). Replaced by /health in DEVHUB-003.
+GET {{DevHub.Api_HostAddress}}/
+Accept: application/json
+
+###
