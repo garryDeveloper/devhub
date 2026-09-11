@@ -1,7 +1,16 @@
-@DevHub.Api_HostAddress = http://localhost:5258
+@DevHub.Api_HostAddress = http://localhost:5080
 
-### Placeholder endpoint (DEVHUB-002). Replaced by /health in DEVHUB-003.
-GET {{DevHub.Api_HostAddress}}/
+### Health (DEVHUB-003). Anonymous; 200 Healthy / 503 Unhealthy.
+GET {{DevHub.Api_HostAddress}}/health
 Accept: application/json
+
+### OpenAPI document. Development and Staging only; 404 in Production.
+GET {{DevHub.Api_HostAddress}}/swagger/v1/swagger.json
+Accept: application/json
+
+### CORS preflight from the Vite dev server.
+OPTIONS {{DevHub.Api_HostAddress}}/health
+Origin: http://localhost:5173
+Access-Control-Request-Method: GET
 
 ###
