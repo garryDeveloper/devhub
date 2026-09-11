@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\DevHub.Application\DevHub.Application.csproj" />
+    <!--
+      Composition root only (DEVHUB-002 technical notes). Program.cs calls
+      AddInfrastructure(); nothing else in DevHub.Api may name an Infrastructure type.
+      If that stops being true, introduce a DevHub.Api.Composition project instead.
+    -->
+    <ProjectReference Include="..\DevHub.Infrastructure\DevHub.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

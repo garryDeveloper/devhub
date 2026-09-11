@@ -12,7 +12,7 @@ is production healthy?**
 |---|---|
 | Web | React + TypeScript + Vite |
 | Mobile | React Native + TypeScript (Expo) |
-| Backend | ASP.NET Core 8 (modular monolith) |
+| Backend | ASP.NET Core 10 (modular monolith) |
 | Database | PostgreSQL (local Docker · AWS RDS) |
 | Storage | AWS S3 (presigned uploads) |
 | Compute | AWS Elastic Beanstalk |

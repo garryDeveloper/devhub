@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="NetArchTest.Rules" Version="1.3.2" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Every layer is referenced so the rules can inspect all four assemblies. -->
+    <ProjectReference Include="..\..\src\DevHub.Api\DevHub.Api.csproj" />
+    <ProjectReference Include="..\..\src\DevHub.Application\DevHub.Application.csproj" />
+    <ProjectReference Include="..\..\src\DevHub.Domain\DevHub.Domain.csproj" />
+    <ProjectReference Include="..\..\src\DevHub.Infrastructure\DevHub.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

@@ -78,7 +78,7 @@ balancer's polling drowns the log.
 
 ## 4. Exception handling
 
-A single exception-handling middleware (or `IExceptionHandler` in .NET 8) maps exceptions to
+A single exception-handling middleware (or `IExceptionHandler`, available since .NET 8) maps exceptions to
 `ProblemDetails`:
 
 | Exception | Status | Logged at |

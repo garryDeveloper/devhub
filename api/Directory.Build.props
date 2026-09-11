@@ -1,0 +1,19 @@
+<Project>
+
+  <!--
+    Settings shared by every project under api/. Keeping them here means a new project
+    cannot accidentally opt out of nullable reference types or of warnings-as-errors.
+
+    Deliberately free of <PackageReference>: DevHub.Domain must have zero NuGet
+    dependencies (DEVHUB-002 acceptance criteria), and anything added here would
+    silently land in Domain too.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+</Project>

@@ -71,7 +71,7 @@ devhub/
 |---|---|
 | Web | React 18 + TypeScript + Vite |
 | Mobile | React Native + TypeScript (Expo) |
-| Backend | ASP.NET Core 8 Web API (modular monolith) |
+| Backend | ASP.NET Core 10 Web API (modular monolith) |
 | ORM | EF Core |
 | Database | PostgreSQL 16 (local: Docker; AWS: RDS) |
 | Object storage | AWS S3 |
