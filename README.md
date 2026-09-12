@@ -20,6 +20,34 @@ is production healthy?**
 | CI/CD | GitHub Actions + OIDC |
 | Observability | CloudWatch |
 
+## Local database
+
+PostgreSQL 16 and Adminer, defined once in `infrastructure/docker-compose.yml`. One command on a
+fresh clone, no setup step:
+
+```bash
+docker compose -f infrastructure/docker-compose.yml up -d          # start
+docker compose -f infrastructure/docker-compose.yml ps             # health status
+docker compose -f infrastructure/docker-compose.yml logs -f postgres
+docker compose -f infrastructure/docker-compose.yml down           # stop, keep data
+docker compose -f infrastructure/docker-compose.yml down -v        # stop, WIPE data
+```
+
+| | |
+|---|---|
+| PostgreSQL | `localhost:5432`, database/user/password all `devhub` |
+| Adminer | <http://localhost:5050> — server is pre-filled, log in with `devhub` / `devhub` |
+
+Both are bound to `127.0.0.1`, so nothing on your network can reach them. The credentials are
+trivial on purpose and are not secrets; never reuse them anywhere else.
+
+Data lives in the named volume `devhub_pgdata` and survives `down`. Only `down -v` deletes it.
+
+If port 5432 or 5050 is already in use on your machine, copy `infrastructure/.env.example` to
+`infrastructure/.env` and set `POSTGRES_PORT` / `ADMINER_PORT`. That file is git-ignored, so a
+fresh clone still gets the standard ports — see
+[`local-development.md`](docs/tech-specs/local-development.md) §3.
+
 ## Running the API in Docker
 
 Elastic Beanstalk runs the API as a container, so the image is the deployment artifact — not a
