@@ -1,0 +1,42 @@
+# ---------------------------------------------------------------------------
+# DevHub API — build context filter for `docker build -t devhub-api:local api`
+#
+# Everything listed here is invisible to the daemon. Two reasons that matter:
+#   1. Speed — the context is uploaded on every build, and bin/obj dwarf the source.
+#   2. Correctness — a host bin/ copied into the image would shadow the artifacts
+#      `dotnet publish` produces inside the container, so "works locally" would
+#      quietly mean "built on my machine, with my SDK".
+# ---------------------------------------------------------------------------
+
+# --- Build output -----------------------------------------------------------
+# **/ matters: a bare `bin/` only matches the context root, not src/*/bin.
+**/bin/
+**/obj/
+
+# --- Tests and the solution that owns them ----------------------------------
+# These travel as a pair on purpose. The image is a runtime artifact, so the test
+# project has no business in it — and once tests/ is excluded, DevHub.sln points at
+# projects that no longer exist in the context. That is why the build restores
+# src/DevHub.Api/DevHub.Api.csproj and never the solution (see Dockerfile).
+tests/
+DevHub.sln
+
+# --- Developer-machine configuration ----------------------------------------
+# launchSettings.json is IDE/`dotnet run` configuration, not application settings.
+# The container gets its configuration from environment variables at runtime.
+Properties/launchSettings.json
+appsettings.Local.json
+*.user
+
+# --- Never, under any circumstances ------------------------------------------
+.env
+.env.*
+secrets.json
+
+# --- Noise -------------------------------------------------------------------
+.git/
+.gitignore
+.vs/
+.idea/
+*.swp
+**/*.http

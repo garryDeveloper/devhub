@@ -166,6 +166,10 @@ dotnet run --project src/DevHub.Api
 dotnet ef migrations add <Name> -p src/DevHub.Infrastructure -s src/DevHub.Api
 dotnet ef database update -p src/DevHub.Infrastructure -s src/DevHub.Api
 
+# Backend container (DEVHUB-004)
+docker build -t devhub-api:local api
+docker run --rm -p 5080:8080 -e Cors__AllowedOrigins__0=http://localhost:5173 devhub-api:local
+
 # Local infrastructure
 docker compose -f infrastructure/docker-compose.yml up -d
 
