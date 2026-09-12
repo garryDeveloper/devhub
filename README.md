@@ -20,6 +20,33 @@ is production healthy?**
 | CI/CD | GitHub Actions + OIDC |
 | Observability | CloudWatch |
 
+## Running the API in Docker
+
+Elastic Beanstalk runs the API as a container, so the image is the deployment artifact — not a
+convenience. Building it locally is how "works on my machine" stops being a deployment problem.
+
+```bash
+docker build -t devhub-api:local api
+
+docker run --rm -p 5080:8080 \
+  -e Cors__AllowedOrigins__0=http://localhost:5173 \
+  devhub-api:local
+
+curl http://localhost:5080/health
+# {"status":"Healthy","checks":{},"version":"1.0.0","durationMs":0}
+```
+
+The container listens on **8080**, not 80: ports below 1024 need root or `CAP_NET_BIND_SERVICE`,
+and the image runs as the non-root user `app` (uid 1654). Port 5080 on the host keeps the same
+address the API has when you run it with `dotnet run`.
+
+`Cors__AllowedOrigins__0` is required because a container with no `ASPNETCORE_ENVIRONMENT` runs
+as **Production**, where an empty CORS allow-list fails startup on purpose (DEVHUB-003). The
+image bakes in no configuration and no secrets — `__` is the .NET convention for nesting, so that
+variable is `Cors:AllowedOrigins[0]`.
+
+Swagger is not served from this image unless you pass `-e ASPNETCORE_ENVIRONMENT=Development`.
+
 ## Repository
 
 ```text
