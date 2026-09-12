@@ -116,6 +116,34 @@ dotnet ef migrations remove -p src/DevHub.Infrastructure -s src/DevHub.Api   # o
 dotnet ef migrations script -p src/DevHub.Infrastructure -s src/DevHub.Api   # review the SQL
 ```
 
+### Running the API as a container
+
+`dotnet run` is the fast loop; the container is what Beanstalk actually runs (DEVHUB-004). Build
+it when you change anything that could behave differently outside your machine — dependencies,
+file paths, culture-sensitive code, or startup configuration.
+
+```bash
+docker build -t devhub-api:local api
+
+docker run --rm -p 5080:8080 \
+  -e Cors__AllowedOrigins__0=http://localhost:5173 \
+  devhub-api:local
+# → http://localhost:5080/health
+```
+
+| Difference from `dotnet run` | Why |
+|---|---|
+| Environment is `Production` | No `ASPNETCORE_ENVIRONMENT` is set, so no Swagger and the CORS allow-list is mandatory |
+| Listens on 8080 inside, 5080 outside | The process is non-root (`app`, uid 1654) and cannot bind a port below 1024 |
+| `launchSettings.json` is ignored | `.dockerignore` keeps it out; it is IDE configuration, not application settings |
+| Globalization is invariant | The Alpine base image ships without ICU (`DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true`) |
+
+Configuration reaches the container only through environment variables, with `__` for nesting:
+`Cors__AllowedOrigins__0` is `Cors:AllowedOrigins[0]`. In AWS those come from SSM (DEVHUB-097).
+Nothing is baked into the image.
+
+Add `-e ASPNETCORE_ENVIRONMENT=Development` to get Swagger at `/swagger` inside the container.
+
 ---
 
 ## 5. Web
