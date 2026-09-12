@@ -27,52 +27,84 @@ Everything needed to run DevHub on your machine, with no AWS account.
 | Web (Vite) | 5173 |
 | Metro (mobile) | 8081 |
 
-Keep these fixed — CORS origins, `.env` files and docs all reference them.
+Keep these fixed — CORS origins, `.env` files and docs all reference them. The two
+infrastructure ports are the one exception: if something on your machine already owns 5432
+or 5050, override them per-machine with `infrastructure/.env` (§3) rather than editing the
+committed defaults.
 
 ---
 
 ## 3. Infrastructure
 
-`infrastructure/docker-compose.yml`:
+`infrastructure/docker-compose.yml` (implemented in DEVHUB-005 — the file itself carries the
+reasoning for each line):
 
 ```yaml
+name: devhub                   # else the project is named after the folder it lives in
+
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16-alpine  # pinned major; RDS runs 16 too
     environment:
       POSTGRES_USER: devhub
       POSTGRES_PASSWORD: devhub
       POSTGRES_DB: devhub
-    ports: ["5432:5432"]
+    ports: ["127.0.0.1:${POSTGRES_PORT:-5432}:5432"]
     volumes: ["pgdata:/var/lib/postgresql/data"]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U devhub"]
+      test: ["CMD-SHELL", "pg_isready -U devhub -d devhub"]
       interval: 5s
+      timeout: 3s
       retries: 10
+      start_period: 10s
 
   adminer:
-    image: adminer
-    ports: ["5050:8080"]
-    depends_on: [postgres]
-
-  minio:                       # local S3, added in DEVHUB-089
-    image: minio/minio
-    command: server /data --console-address ":9001"
+    image: adminer:5-standalone
+    ports: ["127.0.0.1:${ADMINER_PORT:-5050}:8080"]
     environment:
-      MINIO_ROOT_USER: devhub
-      MINIO_ROOT_PASSWORD: devhub123
-    ports: ["9000:9000", "9001:9001"]
-    volumes: ["miniodata:/data"]
+      ADMINER_DEFAULT_SERVER: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy    # the short form waits for *started*, not healthy
 
-volumes: { pgdata: {}, miniodata: {} }
+volumes:
+  pgdata:
 ```
+
+MinIO joins this file in DEVHUB-089 (`minio/minio`, ports 9000/9001, volume `miniodata`) and is
+deliberately absent until then.
 
 ```bash
 docker compose -f infrastructure/docker-compose.yml up -d
+docker compose -f infrastructure/docker-compose.yml ps              # health status
 docker compose -f infrastructure/docker-compose.yml logs -f postgres
 docker compose -f infrastructure/docker-compose.yml down          # keeps data
 docker compose -f infrastructure/docker-compose.yml down -v       # wipes data
 ```
+
+`down` removes the containers but not the named volume, so the data comes back on the next `up`.
+Only `down -v` deletes `devhub_pgdata`, and it does so without a prompt — that is the command to
+reach for when a migration has left the database in a state not worth debugging.
+
+### Why the ports are bound to 127.0.0.1
+
+Docker publishes ports by writing directly into iptables/nftables, which bypasses the host
+firewall. A plain `5432:5432` therefore puts a database whose password is `devhub` on every
+network the laptop joins. Nothing needs LAN access to Postgres — the API, `dotnet ef` and
+Testcontainers all run on the host — so both services bind to loopback only.
+
+### If port 5432 is already taken
+
+Another project's container or a host Postgres will make `up` fail with
+`port is already allocated`. Rather than changing the committed defaults:
+
+```bash
+cp infrastructure/.env.example infrastructure/.env   # then set POSTGRES_PORT=5433
+```
+
+`infrastructure/.env` is git-ignored, so the override stays on your machine and a fresh clone
+still gets 5432. The **container** port never moves, so nothing inside the compose network
+changes — but the API connection string must match the host port you chose (§4).
 
 ---
 
