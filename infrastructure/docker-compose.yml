@@ -1,0 +1,94 @@
+# ---------------------------------------------------------------------------
+# DevHub — local development infrastructure (DEVHUB-005)
+#
+#   docker compose -f infrastructure/docker-compose.yml up -d
+#
+# This is the local stand-in for RDS (DEVHUB-095). It is deliberately NOT how
+# production runs: no backups, no TLS, no tuning, trivial credentials.
+#
+# No `version:` key — it has been obsolete since Compose v2 and only produces a
+# warning on modern Docker.
+# ---------------------------------------------------------------------------
+
+# Without this, Compose names the project after the directory it lives in, so the
+# volume becomes `infrastructure_pgdata` and the container `infrastructure-postgres-1`.
+# Pinning the project name keeps every documented command true no matter where the
+# repository is checked out or what the folder is called.
+name: devhub
+
+services:
+  postgres:
+    # Pinned to the major version on purpose. `latest` moves under you, and the
+    # morning it jumps to 17 a migration breaks for reasons that look like your bug.
+    # AWS RDS runs 16 too (aws-architecture.md) — same major, same behaviour.
+    image: postgres:16-alpine
+
+    environment:
+      # Not secrets. Nothing outside this machine can reach the port (see `ports`
+      # below), and the database holds only throwaway development data. They are
+      # hardcoded rather than read from a .env file so that a fresh clone starts
+      # with one command and no setup step. Never reuse them anywhere else.
+      POSTGRES_USER: devhub
+      POSTGRES_PASSWORD: devhub
+      POSTGRES_DB: devhub
+
+    # Bound to the loopback interface, not 0.0.0.0. Docker writes its port
+    # publishing straight into iptables/nftables, which means a plain "5432:5432"
+    # bypasses the host firewall and exposes a database whose password is "devhub"
+    # to every machine on whatever network you are on. Nothing needs LAN access to
+    # Postgres: the API, `dotnet ef` and Testcontainers all run on this host.
+    #
+    # The host port defaults to 5432 (local-development.md §2) so a fresh clone
+    # needs no setup, but stays overridable for the one case that actually happens:
+    # another Postgres already owns 5432 on this machine. Set POSTGRES_PORT in
+    # infrastructure/.env — it is git-ignored, so it never changes anyone else's
+    # setup. The *container* port is always 5432; only the host side moves, which
+    # is why nothing inside the compose network is affected.
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+
+    # A named volume, not a bind mount. Docker owns the directory, so the files get
+    # the uid/gid and permissions Postgres expects instead of inheriting yours —
+    # the usual cause of "could not open file ... Permission denied" on Linux.
+    # It survives `down` and is deleted only by `down -v`.
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+    healthcheck:
+      # -d devhub is not redundant padding: without it pg_isready checks a database
+      # named after the user, which is the same name here only by coincidence.
+      test: ["CMD-SHELL", "pg_isready -U devhub -d devhub"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      # The official entrypoint boots a temporary server on a unix socket to run
+      # initialisation, then restarts it for real. start_period keeps the failures
+      # during that window from counting toward `retries`.
+      start_period: 10s
+
+  adminer:
+    # Pinned like Postgres. The -standalone variant runs its own PHP server rather
+    # than expecting to be dropped into someone else's web root.
+    image: adminer:5-standalone
+
+    ports:
+      # 8080 inside the container, 5050 on the host (local-development.md §2).
+      # Loopback-only for the same reason as Postgres: this is an unauthenticated
+      # front door to the database.
+      - "127.0.0.1:${ADMINER_PORT:-5050}:8080"
+
+    environment:
+      # Pre-fills the server field so the login form only needs devhub/devhub.
+      # "postgres" is the service name — Compose's DNS resolves it on the shared
+      # network, which is also why Adminer does not need a published Postgres port.
+      ADMINER_DEFAULT_SERVER: postgres
+
+    depends_on:
+      postgres:
+        # The long form, deliberately. `depends_on: [postgres]` waits only for the
+        # container to *start*, which would make the healthcheck above decorative.
+        # service_healthy waits for pg_isready to actually pass.
+        condition: service_healthy
+
+volumes:
+  pgdata:
