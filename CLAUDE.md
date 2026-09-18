@@ -159,16 +159,20 @@ Fill these in as the projects are scaffolded; keep this table accurate.
 
 ```bash
 # Backend
-cd api && dotnet restore
+cd api && dotnet restore && dotnet tool restore
 dotnet build DevHub.sln
-dotnet test
+dotnet test                                    # integration tests need Docker
 dotnet run --project src/DevHub.Api
-dotnet ef migrations add <Name> -p src/DevHub.Infrastructure -s src/DevHub.Api
-dotnet ef database update -p src/DevHub.Infrastructure -s src/DevHub.Api
+# Migrations: startup project is Infrastructure (design-time factory), not Api.
+dotnet ef migrations add <Name> -p src/DevHub.Infrastructure -s src/DevHub.Infrastructure --output-dir Persistence/Migrations
+dotnet ef database update -p src/DevHub.Infrastructure -s src/DevHub.Infrastructure
 
 # Backend container (DEVHUB-004)
 docker build -t devhub-api:local api
-docker run --rm -p 5080:8080 -e Cors__AllowedOrigins__0=http://localhost:5173 devhub-api:local
+docker run --rm -p 5080:8080 --network devhub_default \
+  -e Cors__AllowedOrigins__0=http://localhost:5173 \
+  -e ConnectionStrings__Default="Host=postgres;Port=5432;Database=devhub;Username=devhub;Password=devhub" \
+  devhub-api:local
 
 # Local infrastructure
 docker compose -f infrastructure/docker-compose.yml up -d

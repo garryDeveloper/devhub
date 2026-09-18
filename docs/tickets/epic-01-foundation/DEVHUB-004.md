@@ -31,11 +31,13 @@ now means "works on my machine" never becomes a deployment problem later.
 ## Acceptance criteria
 
 - [ ] The image builds from a clean checkout.
-- [ ] `docker run -p 5080:8080 -e Cors__AllowedOrigins__0=http://localhost:5173 devhub-api:local`
-      serves `/health`. The CORS variable is required, not incidental: a container with no
-      `ASPNETCORE_ENVIRONMENT` runs as Production, where DEVHUB-003's empty-allow-list guard
-      aborts startup by design. Passing it at run time is the correct fix — baking a default
-      into the image would violate "no configuration in the image" below.
+- [ ] `docker run -p 5080:8080 --network devhub_default -e Cors__AllowedOrigins__0=... -e
+      ConnectionStrings__Default=... devhub-api:local` serves `/health`. Both variables are
+      required, not incidental: a container with no `ASPNETCORE_ENVIRONMENT` runs as Production,
+      where DEVHUB-003's empty-allow-list guard and DEVHUB-006's missing-connection-string guard
+      each abort startup by design. Passing them at run time is the correct fix — baking
+      defaults into the image would violate "no configuration in the image" below. The exact
+      command is in the README.
 - [ ] Image size is under ~250 MB.
 - [ ] Changing only a `.cs` file rebuilds without re-restoring NuGet packages.
 

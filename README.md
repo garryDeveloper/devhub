@@ -56,8 +56,11 @@ convenience. Building it locally is how "works on my machine" stops being a depl
 ```bash
 docker build -t devhub-api:local api
 
-docker run --rm -p 5080:8080 \
+# Joins the compose network from "Local database" above, so the API reaches PostgreSQL by
+# its service name. Start that stack first.
+docker run --rm -p 5080:8080 --network devhub_default \
   -e Cors__AllowedOrigins__0=http://localhost:5173 \
+  -e ConnectionStrings__Default="Host=postgres;Port=5432;Database=devhub;Username=devhub;Password=devhub" \
   devhub-api:local
 
 curl http://localhost:5080/health
@@ -68,10 +71,15 @@ The container listens on **8080**, not 80: ports below 1024 need root or `CAP_NE
 and the image runs as the non-root user `app` (uid 1654). Port 5080 on the host keeps the same
 address the API has when you run it with `dotnet run`.
 
-`Cors__AllowedOrigins__0` is required because a container with no `ASPNETCORE_ENVIRONMENT` runs
-as **Production**, where an empty CORS allow-list fails startup on purpose (DEVHUB-003). The
-image bakes in no configuration and no secrets — `__` is the .NET convention for nesting, so that
-variable is `Cors:AllowedOrigins[0]`.
+Both environment variables are required, and both fail at **startup** rather than on the first
+request that needs them: an empty CORS allow-list (DEVHUB-003) and a missing connection string
+(DEVHUB-006) each abort the boot with a named message. A container with no
+`ASPNETCORE_ENVIRONMENT` runs as Production, which is where those guards apply. The image bakes
+in no configuration and no secrets — `__` is the .NET convention for nesting, so
+`Cors__AllowedOrigins__0` is `Cors:AllowedOrigins[0]`.
+
+Inside the compose network the host is `postgres` on port 5432. From outside it is `localhost`
+on whatever host port you published (5432 by default).
 
 Swagger is not served from this image unless you pass `-e ASPNETCORE_ENVIRONMENT=Development`.
 
