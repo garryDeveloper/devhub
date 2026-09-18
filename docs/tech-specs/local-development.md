@@ -11,7 +11,7 @@ Everything needed to run DevHub on your machine, with no AWS account.
 | .NET SDK | 10.0+ | `dotnet --version` |
 | Node.js | 20 LTS+ | `node -v` |
 | Docker Desktop | latest | `docker ps` |
-| EF Core tools | 10.x | `dotnet tool install --global dotnet-ef` |
+| EF Core tools | pinned | `cd api && dotnet tool restore` (manifest in `api/dotnet-tools.json`) |
 | Expo Go (phone) or an emulator | — | for mobile |
 
 ---
@@ -113,9 +113,21 @@ changes — but the API connection string must match the host port you chose (§
 ```bash
 cd api
 dotnet restore
-dotnet ef database update -p src/DevHub.Infrastructure -s src/DevHub.Api
+dotnet tool restore                            # pinned dotnet-ef, see §1
+dotnet ef database update -p src/DevHub.Infrastructure -s src/DevHub.Infrastructure
 dotnet run --project src/DevHub.Api
 # → http://localhost:5080/swagger
+```
+
+The startup project is `DevHub.Infrastructure`, not `DevHub.Api`. A design-time factory
+(`DevHubDbContextFactory`) builds the context for the tooling, so generating and applying
+migrations never boots the web application — schema work does not depend on the CORS allow-list
+or on anything else `Program.cs` validates. The factory reads `ConnectionStrings__Default` from
+the environment and otherwise falls back to `localhost:5432`; if you overrode `POSTGRES_PORT`
+in `infrastructure/.env`, export it to match:
+
+```bash
+export ConnectionStrings__Default="Host=localhost;Port=5433;Database=devhub;Username=devhub;Password=devhub"
 ```
 
 Secrets never live in `appsettings.json`:
@@ -143,9 +155,10 @@ dotnet test                                    # all tests (needs Docker for int
 dotnet test tests/DevHub.Domain.UnitTests      # fast loop
 dotnet watch --project src/DevHub.Api run      # hot reload
 
-dotnet ef migrations add DEVHUB042_AddX -p src/DevHub.Infrastructure -s src/DevHub.Api
-dotnet ef migrations remove -p src/DevHub.Infrastructure -s src/DevHub.Api   # only if not applied
-dotnet ef migrations script -p src/DevHub.Infrastructure -s src/DevHub.Api   # review the SQL
+dotnet ef migrations add DEVHUB042_AddX -p src/DevHub.Infrastructure -s src/DevHub.Infrastructure \
+  --output-dir Persistence/Migrations
+dotnet ef migrations remove -p src/DevHub.Infrastructure -s src/DevHub.Infrastructure  # only if not applied
+dotnet ef migrations script -p src/DevHub.Infrastructure -s src/DevHub.Infrastructure  # review the SQL
 ```
 
 ### Running the API as a container
@@ -157,15 +170,19 @@ file paths, culture-sensitive code, or startup configuration.
 ```bash
 docker build -t devhub-api:local api
 
-docker run --rm -p 5080:8080 \
+docker run --rm -p 5080:8080 --network devhub_default \
   -e Cors__AllowedOrigins__0=http://localhost:5173 \
+  -e ConnectionStrings__Default="Host=postgres;Port=5432;Database=devhub;Username=devhub;Password=devhub" \
   devhub-api:local
 # → http://localhost:5080/health
 ```
 
+Joining `devhub_default` lets the API resolve PostgreSQL by its compose service name, which is
+why the host is `postgres:5432` here and `localhost:5432` when running with `dotnet run`.
+
 | Difference from `dotnet run` | Why |
 |---|---|
-| Environment is `Production` | No `ASPNETCORE_ENVIRONMENT` is set, so no Swagger and the CORS allow-list is mandatory |
+| Environment is `Production` | No `ASPNETCORE_ENVIRONMENT` is set, so no Swagger, and both the CORS allow-list and `ConnectionStrings:Default` are mandatory at startup |
 | Listens on 8080 inside, 5080 outside | The process is non-root (`app`, uid 1654) and cannot bind a port below 1024 |
 | `launchSettings.json` is ignored | `.dockerignore` keeps it out; it is IDE configuration, not application settings |
 | Globalization is invariant | The Alpine base image ships without ICU (`DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true`) |

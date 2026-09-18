@@ -6,8 +6,35 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
+    <!-- Held at the version the EF Core packages below depend on. Left at 10.0.0 these
+         become a silent package downgrade (NU1605), which TreatWarningsAsErrors turns into
+         a build failure rather than a runtime surprise. -->
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Persistence (DEVHUB-006). These live here and nowhere else: the Npgsql and EF Core
+         types must not be visible to Application or Domain, which is what the architecture
+         tests enforce. -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageReference Include="EFCore.NamingConventions" Version="10.0.1" />
+
+    <!-- Referenced explicitly only to unify the version. Npgsql and NamingConventions float
+         EF Core to 10.0.4, while the Design package below pins 10.0.12; without these two
+         lines the build resolves both and reports MSB3277 assembly conflicts. Unified upward
+         rather than pinning Design down, so the runtime, the Design package and the dotnet-ef
+         tool in dotnet-tools.json are all on the same version. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12" />
+
+    <!-- Design-time only: `dotnet ef` needs it to build the model, the running application
+         does not. PrivateAssets="all" keeps it out of the published output and out of the
+         container image. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>
