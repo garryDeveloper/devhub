@@ -81,11 +81,17 @@ the behaviour belongs in an integration test.
 `WebApplicationFactory<Program>` + Testcontainers PostgreSQL. A real database, real migrations,
 real HTTP pipeline, real serialization.
 
+DEVHUB-006 created `tests/DevHub.Api.IntegrationTests` with only the Testcontainers fixture and
+the migration tests its acceptance criteria require. DEVHUB-011 grows that same project into the
+harness below — `WebApplicationFactory`, Respawn, seed builders, the auth helper.
+
 ```csharp
 public class IntegrationTestBase : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _db = new PostgreSqlBuilder()
-        .WithImage("postgres:16-alpine").Build();
+    // The image goes in the constructor; Testcontainers 4.15 obsoleted the
+    // parameterless builder and the old .WithImage() form no longer compiles.
+    private readonly PostgreSqlContainer _db =
+        new PostgreSqlBuilder("postgres:16-alpine").Build();
 
     protected HttpClient Client = default!;
 

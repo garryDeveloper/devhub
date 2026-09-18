@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Created by DEVHUB-006 with the single test its acceptance criteria require: that migrations
+    apply to an empty database. DEVHUB-011 owns this project from then on and grows it into the
+    real harness — WebApplicationFactory, Respawn between tests, seed builders, an auth helper.
+    The name and location come from backend-architecture.md §3 so that ticket extends this
+    project instead of creating a second one.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+
+    <!-- A real PostgreSQL 16 in a container, matching infrastructure/docker-compose.yml and
+         RDS. Never an in-memory provider: citext, timestamptz and unique indexes are exactly
+         the things an in-memory provider does not have, and they are what this tests. -->
+    <PackageReference Include="Testcontainers.PostgreSql" Version="4.15.0" />
+
+    <!-- Npgsql directly, to inspect the schema PostgreSQL actually ended up with rather than
+         the model EF believes it created. -->
+    <PackageReference Include="Npgsql" Version="10.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DevHub.Infrastructure\DevHub.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>
