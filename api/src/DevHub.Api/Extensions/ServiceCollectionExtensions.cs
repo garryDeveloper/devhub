@@ -1,3 +1,4 @@
+using DevHub.Api.Configuration;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi;
 
@@ -45,17 +46,22 @@ public static class ServiceCollectionExtensions
 
     private static void AddApiCors(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
-        var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-
         // An empty allow-list blocks every browser origin without logging anything, so a typo
         // in deployment configuration would look like a frontend bug. Refuse to start instead.
-        // Development is exempt so a fresh clone runs before any configuration is set.
-        if (allowedOrigins.Length == 0 && !environment.IsDevelopment())
-        {
-            throw new InvalidOperationException(
+        // Development is exempt so a fresh clone runs before any configuration is set. This is
+        // environment-conditional, so it is a `.Validate()` predicate (DEVHUB-007) rather than a
+        // data annotation on CorsOptions, which has no notion of the hosting environment.
+        services.AddOptions<CorsOptions>()
+            .Bind(configuration.GetSection(CorsOptions.SectionName))
+            .Validate(
+                options => options.AllowedOrigins.Length > 0 || environment.IsDevelopment(),
                 "Cors:AllowedOrigins is empty. Set it for this environment, e.g. "
-                + "Cors__AllowedOrigins__0=https://devhub.example.com.");
-        }
+                    + "Cors__AllowedOrigins__0=https://devhub.example.com.")
+            .ValidateOnStart();
+
+        // AddCors builds the policy once, at registration time, so it needs the value now rather
+        // than through IOptions<T> (which is only safe to resolve once the container is built).
+        var allowedOrigins = configuration.GetSection(CorsOptions.SectionName).Get<CorsOptions>()?.AllowedOrigins ?? [];
 
         services.AddCors(options =>
         {

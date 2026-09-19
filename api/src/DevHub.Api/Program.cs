@@ -7,10 +7,15 @@ var builder = WebApplication.CreateBuilder(args);
 // The composition root. Each layer registers its own services; Program.cs only wires them
 // together and fixes the middleware order, so this file stays readable as the app grows.
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 builder.Services.AddApiServices(builder.Configuration, builder.Environment);
 
 var app = builder.Build();
+
+// Names only, never values (DEVHUB-007) — this answers "did my override actually load?"
+// without ever being able to leak a secret into the console or CloudWatch.
+var configurationSources = string.Join(", ", ((IConfigurationRoot)app.Configuration).Providers);
+app.Logger.LogInformation("Configuration sources loaded: {Sources}", configurationSources);
 
 // Swagger is a development tool and an information leak in production: it publishes every
 // route, DTO shape and status code the API has.
