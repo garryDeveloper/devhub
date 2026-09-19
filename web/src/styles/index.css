@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens from docs/screens-and-navigation.md §8 "Shared UI rules".
+ * Status/health color is never the only signal — pair with a glyph or label.
+ */
+@theme {
+  --color-status-backlog: #9ca3af;
+  --color-status-todo: #94a3b8;
+  --color-status-in-progress: #3b82f6;
+  --color-status-in-review: #f59e0b;
+  --color-status-done: #22c55e;
+  --color-status-canceled: #f87171;
+
+  --color-health-healthy: #22c55e;
+  --color-health-degraded: #f59e0b;
+  --color-health-unhealthy: #ef4444;
+  --color-health-unknown: #9ca3af;
+}
