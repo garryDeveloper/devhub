@@ -43,6 +43,11 @@ dotnet_naming_style.underscore_camel_case.capitalization = camel_case
 [*.{csproj,props,targets,config,nuspec,resx}]
 indent_size = 2
 
+# dotnet-ef always emits migrations with a UTF-8 BOM; matching that here instead of
+# fighting it means every future `migrations add` doesn't reopen this as a lint failure.
+[**/Migrations/*.cs]
+charset = utf-8-bom
+
 [*.{ts,tsx,js,jsx,mjs,cjs}]
 indent_size = 2
 quote_type = single
