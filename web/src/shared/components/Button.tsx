@@ -1,5 +1,5 @@
-import { forwardRef } from 'react';
 import type { ButtonHTMLAttributes } from 'react';
+import { forwardRef } from 'react';
 import { cn } from '../lib/cn';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive';
@@ -12,8 +12,10 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary: 'bg-slate-900 text-white hover:bg-slate-700 disabled:bg-slate-300',
-  secondary: 'bg-white text-slate-900 border border-slate-300 hover:bg-slate-50 disabled:text-slate-400',
-  ghost: 'bg-transparent text-slate-700 hover:bg-slate-100 disabled:text-slate-400',
+  secondary:
+    'bg-white text-slate-900 border border-slate-300 hover:bg-slate-50 disabled:text-slate-400',
+  ghost:
+    'bg-transparent text-slate-700 hover:bg-slate-100 disabled:text-slate-400',
   destructive: 'bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300',
 };
 
@@ -23,7 +25,10 @@ const sizeClasses: Record<ButtonSize, string> = {
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = 'primary', size = 'md', className, type = 'button', ...props }, ref) => (
+  (
+    { variant = 'primary', size = 'md', className, type = 'button', ...props },
+    ref,
+  ) => (
     <button
       ref={ref}
       type={type}

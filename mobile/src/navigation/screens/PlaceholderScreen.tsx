@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+
 import { Screen } from '../../shared/components/Screen';
 import { colors } from '../../shared/theme/colors';
 import { spacing } from '../../shared/theme/spacing';
@@ -15,7 +16,9 @@ export function PlaceholderScreen({ title, params }: PlaceholderScreenProps) {
   return (
     <Screen>
       <Text style={styles.title}>{title}</Text>
-      <Text style={styles.subtitle}>This screen is built in its own ticket.</Text>
+      <Text style={styles.subtitle}>
+        This screen is built in its own ticket.
+      </Text>
       {params && (
         <View style={styles.paramsBox}>
           {Object.entries(params).map(([key, value]) => (

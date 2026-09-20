@@ -37,7 +37,12 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
       <ul className="space-y-1">
         {primaryNav.map((item) => (
           <li key={item.to}>
-            <NavLink to={item.to} end={item.to === '/'} onClick={onNavigate} className={navLinkClassName}>
+            <NavLink
+              to={item.to}
+              end={item.to === '/'}
+              onClick={onNavigate}
+              className={navLinkClassName}
+            >
               <span aria-hidden="true">{item.icon}</span>
               {item.label}
             </NavLink>
@@ -47,7 +52,11 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
       <ul className="space-y-1 border-t border-slate-200 pt-2">
         {secondaryNav.map((item) => (
           <li key={item.to}>
-            <NavLink to={item.to} onClick={onNavigate} className={navLinkClassName}>
+            <NavLink
+              to={item.to}
+              onClick={onNavigate}
+              className={navLinkClassName}
+            >
               <span aria-hidden="true">{item.icon}</span>
               {item.label}
             </NavLink>
@@ -74,10 +83,14 @@ export function AppShell() {
         >
           ☰
         </button>
-        <span className="text-sm font-semibold tracking-wide text-slate-900">DEVHUB</span>
+        <span className="text-sm font-semibold tracking-wide text-slate-900">
+          DEVHUB
+        </span>
         <div className="ml-auto flex items-center gap-2 text-sm text-slate-400">
           <span className="hidden sm:inline">Search</span>
-          <kbd className="rounded border border-slate-300 px-1.5 py-0.5 text-xs">⌘K</kbd>
+          <kbd className="rounded border border-slate-300 px-1.5 py-0.5 text-xs">
+            ⌘K
+          </kbd>
         </div>
       </header>
 
@@ -91,7 +104,12 @@ export function AppShell() {
         </main>
       </div>
 
-      <Drawer open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} title="Menu" side="left">
+      <Drawer
+        open={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        title="Menu"
+        side="left"
+      >
         <NavLinks onNavigate={() => setMobileNavOpen(false)} />
       </Drawer>
     </div>

@@ -3,7 +3,10 @@ import { cn } from '../lib/cn';
 
 // A skeleton is a building block: compose it to match the final layout
 // (e.g. a row of skeletons shaped like a table row), not a generic spinner.
-export function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+export function Skeleton({
+  className,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       role="presentation"

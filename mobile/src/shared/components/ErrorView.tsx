@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
@@ -14,7 +15,11 @@ export function ErrorView({ message, onRetry }: ErrorViewProps) {
     <View style={styles.container}>
       <Text style={styles.message}>{message}</Text>
       {onRetry && (
-        <Pressable onPress={onRetry} style={styles.retry} accessibilityRole="button">
+        <Pressable
+          onPress={onRetry}
+          style={styles.retry}
+          accessibilityRole="button"
+        >
           <Text style={styles.retryText}>Retry</Text>
         </Pressable>
       )}

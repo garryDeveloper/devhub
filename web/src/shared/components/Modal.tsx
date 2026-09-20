@@ -1,5 +1,5 @@
+import type { MouseEvent, ReactNode } from 'react';
 import { useId } from 'react';
-import type { ReactNode, MouseEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 

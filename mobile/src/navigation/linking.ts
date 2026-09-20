@@ -1,5 +1,6 @@
 import type { LinkingOptions } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
+
 import type { RootStackParamList } from './types';
 
 // devhub://projects/{id}, devhub://issues/{key}, devhub://deployments/{id} —

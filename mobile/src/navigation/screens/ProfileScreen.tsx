@@ -1,6 +1,7 @@
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text } from 'react-native';
+
 import { Screen } from '../../shared/components/Screen';
 import { colors } from '../../shared/theme/colors';
 import { spacing } from '../../shared/theme/spacing';
@@ -8,12 +9,15 @@ import { typography } from '../../shared/theme/typography';
 import type { MeStackParamList } from '../types';
 
 export function ProfileScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<MeStackParamList, 'Profile'>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<MeStackParamList, 'Profile'>>();
 
   return (
     <Screen>
       <Text style={styles.title}>Me</Text>
-      <Text style={styles.subtitle}>Profile and account settings are built in their own ticket.</Text>
+      <Text style={styles.subtitle}>
+        Profile and account settings are built in their own ticket.
+      </Text>
       <Pressable
         onPress={() => navigation.navigate('ApiHealth')}
         style={styles.link}

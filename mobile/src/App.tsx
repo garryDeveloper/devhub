@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
-import { Providers } from './providers';
+
 import { RootNavigator } from './navigation/RootNavigator';
+import { Providers } from './providers';
 
 export default function App() {
   return (

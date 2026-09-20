@@ -14,25 +14,79 @@ export const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />,
     children: [
       { index: true, element: <PlaceholderPage title="Overview" /> },
-      { path: 'w/:workspaceSlug', element: <PlaceholderPage title="Workspace dashboard" /> },
-      { path: 'w/:workspaceSlug/settings', element: <PlaceholderPage title="Workspace settings" /> },
-      { path: 'w/:workspaceSlug/members', element: <PlaceholderPage title="Workspace members" /> },
-      { path: 'w/:workspaceSlug/projects', element: <PlaceholderPage title="Project list" /> },
-      { path: 'p/:projectKey', element: <PlaceholderPage title="Project overview" /> },
-      { path: 'p/:projectKey/issues', element: <PlaceholderPage title="Issues" /> },
-      { path: 'p/:projectKey/issues/:issueKey', element: <PlaceholderPage title="Issue detail" /> },
-      { path: 'p/:projectKey/board', element: <PlaceholderPage title="Board" /> },
-      { path: 'p/:projectKey/releases', element: <PlaceholderPage title="Releases" /> },
-      { path: 'p/:projectKey/releases/:version', element: <PlaceholderPage title="Release detail" /> },
-      { path: 'p/:projectKey/environments', element: <PlaceholderPage title="Environments" /> },
-      { path: 'p/:projectKey/environments/:envId', element: <PlaceholderPage title="Environment detail" /> },
-      { path: 'p/:projectKey/deployments/:number', element: <PlaceholderPage title="Deployment detail" /> },
-      { path: 'p/:projectKey/cicd', element: <PlaceholderPage title="CI/CD runs" /> },
-      { path: 'p/:projectKey/activity', element: <PlaceholderPage title="Project activity" /> },
-      { path: 'p/:projectKey/settings', element: <PlaceholderPage title="Project settings" /> },
-      { path: 'notifications', element: <PlaceholderPage title="Notifications" /> },
+      {
+        path: 'w/:workspaceSlug',
+        element: <PlaceholderPage title="Workspace dashboard" />,
+      },
+      {
+        path: 'w/:workspaceSlug/settings',
+        element: <PlaceholderPage title="Workspace settings" />,
+      },
+      {
+        path: 'w/:workspaceSlug/members',
+        element: <PlaceholderPage title="Workspace members" />,
+      },
+      {
+        path: 'w/:workspaceSlug/projects',
+        element: <PlaceholderPage title="Project list" />,
+      },
+      {
+        path: 'p/:projectKey',
+        element: <PlaceholderPage title="Project overview" />,
+      },
+      {
+        path: 'p/:projectKey/issues',
+        element: <PlaceholderPage title="Issues" />,
+      },
+      {
+        path: 'p/:projectKey/issues/:issueKey',
+        element: <PlaceholderPage title="Issue detail" />,
+      },
+      {
+        path: 'p/:projectKey/board',
+        element: <PlaceholderPage title="Board" />,
+      },
+      {
+        path: 'p/:projectKey/releases',
+        element: <PlaceholderPage title="Releases" />,
+      },
+      {
+        path: 'p/:projectKey/releases/:version',
+        element: <PlaceholderPage title="Release detail" />,
+      },
+      {
+        path: 'p/:projectKey/environments',
+        element: <PlaceholderPage title="Environments" />,
+      },
+      {
+        path: 'p/:projectKey/environments/:envId',
+        element: <PlaceholderPage title="Environment detail" />,
+      },
+      {
+        path: 'p/:projectKey/deployments/:number',
+        element: <PlaceholderPage title="Deployment detail" />,
+      },
+      {
+        path: 'p/:projectKey/cicd',
+        element: <PlaceholderPage title="CI/CD runs" />,
+      },
+      {
+        path: 'p/:projectKey/activity',
+        element: <PlaceholderPage title="Project activity" />,
+      },
+      {
+        path: 'p/:projectKey/settings',
+        element: <PlaceholderPage title="Project settings" />,
+      },
+      {
+        path: 'notifications',
+        element: <PlaceholderPage title="Notifications" />,
+      },
       { path: 'account/profile', element: <PlaceholderPage title="Profile" /> },
-      { path: 'account/settings', element: <PlaceholderPage title="Account settings" /> },
+      {
+        path: 'account/settings',
+        element: <PlaceholderPage title="Account settings" />,
+      },
       { path: 'debug/health', element: <HealthCheckPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
@@ -43,7 +97,10 @@ export const router = createBrowserRouter([
     children: [
       { path: 'login', element: <PlaceholderPage title="Login" /> },
       { path: 'register', element: <PlaceholderPage title="Register" /> },
-      { path: 'forgot-password', element: <PlaceholderPage title="Forgot password" /> },
+      {
+        path: 'forgot-password',
+        element: <PlaceholderPage title="Forgot password" />,
+      },
     ],
   },
 ]);
