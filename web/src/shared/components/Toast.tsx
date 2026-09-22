@@ -1,7 +1,7 @@
-import { useCallback, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { ToastContext } from '../lib/toast-context';
+import { useCallback, useRef, useState } from 'react';
 import type { ToastVariant } from '../lib/toast-context';
+import { ToastContext } from '../lib/toast-context';
 
 interface ToastItem {
   id: number;
@@ -21,13 +21,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextId = useRef(0);
 
-  const show = useCallback((message: string, variant: ToastVariant = 'info') => {
-    const id = nextId.current++;
-    setToasts((prev) => [...prev, { id, message, variant }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, AUTO_DISMISS_MS);
-  }, []);
+  const show = useCallback(
+    (message: string, variant: ToastVariant = 'info') => {
+      const id = nextId.current++;
+      setToasts((prev) => [...prev, { id, message, variant }]);
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+      }, AUTO_DISMISS_MS);
+    },
+    [],
+  );
 
   return (
     <ToastContext.Provider value={{ show }}>

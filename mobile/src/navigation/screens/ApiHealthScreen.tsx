@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { StyleSheet, Text } from 'react-native';
+
 import { apiFetch } from '../../shared/api/client';
 import { qk } from '../../shared/api/queryKeys';
 import { ErrorView } from '../../shared/components/ErrorView';
@@ -24,13 +25,21 @@ export function ApiHealthScreen() {
   return (
     <Screen>
       <Text style={styles.title}>API health</Text>
-      <Text style={styles.subtitle}>Checks {process.env.EXPO_PUBLIC_API_URL ?? '(EXPO_PUBLIC_API_URL not set)'}</Text>
+      <Text style={styles.subtitle}>
+        Checks{' '}
+        {process.env.EXPO_PUBLIC_API_URL ?? '(EXPO_PUBLIC_API_URL not set)'}
+      </Text>
 
       {isPending && <Loading />}
       {error && (
-        <ErrorView message={error instanceof Error ? error.message : 'Request failed'} onRetry={() => refetch()} />
+        <ErrorView
+          message={error instanceof Error ? error.message : 'Request failed'}
+          onRetry={() => refetch()}
+        />
       )}
-      {data && <Text style={styles.result}>{JSON.stringify(data, null, 2)}</Text>}
+      {data && (
+        <Text style={styles.result}>{JSON.stringify(data, null, 2)}</Text>
+      )}
     </Screen>
   );
 }

@@ -15,7 +15,11 @@ export function RouteErrorBoundary() {
 
   return (
     <div className="p-6">
-      <ErrorState title="This screen crashed" message={message} onRetry={() => window.location.reload()} />
+      <ErrorState
+        title="This screen crashed"
+        message={message}
+        onRetry={() => window.location.reload()}
+      />
     </div>
   );
 }

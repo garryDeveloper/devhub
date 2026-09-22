@@ -14,6 +14,12 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- .NET analyzers are on by default for net5.0+ SDK-style projects (EnableNETAnalyzers).
+         This also enforces the .editorconfig style rules at build time, so a plain
+         `dotnet build` catches what `dotnet format` would flag. No NuGet package needed,
+         so DevHub.Domain stays dependency-free. -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
 </Project>

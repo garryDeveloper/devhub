@@ -1,5 +1,6 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
 import { AppTabs } from './AppTabs';
 import { linking } from './linking';
 import { PlaceholderScreen } from './screens/PlaceholderScreen';

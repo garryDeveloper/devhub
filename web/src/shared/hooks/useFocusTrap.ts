@@ -21,7 +21,9 @@ export function useFocusTrap(active: boolean, onClose: () => void) {
     const previouslyFocused = document.activeElement as HTMLElement | null;
 
     const focusables = () =>
-      Array.from(container?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR) ?? []);
+      Array.from(
+        container?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR) ?? [],
+      );
 
     (focusables()[0] ?? container)?.focus();
 

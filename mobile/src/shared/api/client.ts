@@ -40,11 +40,17 @@ async function toApiError(res: Response): Promise<ApiError> {
       errors: body.errors,
     });
   } catch {
-    return new ApiError({ title: res.statusText || 'Request failed', status: res.status });
+    return new ApiError({
+      title: res.statusText || 'Request failed',
+      status: res.status,
+    });
   }
 }
 
-export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+export async function apiFetch<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: {

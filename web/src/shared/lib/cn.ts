@@ -1,4 +1,5 @@
-export type ClassValue = string | number | null | undefined | false | ClassValue[];
+export type ClassValue =
+  string | number | null | undefined | false | ClassValue[];
 
 function flatten(value: ClassValue, out: string[]): void {
   if (!value) return;
