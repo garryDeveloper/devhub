@@ -18,6 +18,10 @@
     <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.12" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.12" />
     <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.12" />
+
+    <!-- DEVHUB-013: just PasswordHasher<TUser> and its options — not the full Identity.Stores
+         package, which drags in IUserStore/EF conventions this project defines for itself. -->
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.12" />
   </ItemGroup>
 
   <ItemGroup>

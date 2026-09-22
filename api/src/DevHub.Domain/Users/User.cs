@@ -58,4 +58,34 @@ public sealed class User : AggregateRoot, IAuditable
     public DateTimeOffset CreatedAt { get; private set; }
 
     public DateTimeOffset UpdatedAt { get; private set; }
+
+    public static User Create(string email, string displayName, string passwordHash)
+    {
+        // Guarded here, not only in the constructor below: a null email would otherwise reach
+        // Trim() first and throw NullReferenceException instead of the ArgumentException every
+        // other invalid-input path throws.
+        ArgumentException.ThrowIfNullOrWhiteSpace(email);
+
+        // v7 for index locality (CLAUDE.md §4), matching every other aggregate's id generation.
+        var id = Guid.CreateVersion7();
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        return new User(id, normalizedEmail, displayName, passwordHash);
+    }
+
+    public void ChangeDisplayName(string newDisplayName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(newDisplayName);
+        DisplayName = newDisplayName;
+    }
+
+    public void SetAvatar(string? avatarKey)
+    {
+        AvatarKey = avatarKey;
+    }
+
+    public void ChangePassword(string newPasswordHash)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(newPasswordHash);
+        PasswordHash = newPasswordHash;
+    }
 }

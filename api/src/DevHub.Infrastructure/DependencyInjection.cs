@@ -31,6 +31,10 @@ public static class DependencyInjection
         // The production clock. Singleton: it holds no state and reads the OS clock each call.
         services.AddSingleton<ITimeProvider, SystemTimeProvider>();
 
+        // Stateless wrapper over PasswordHasher<User> (DEVHUB-013): singleton for the same
+        // reason as the clock above.
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
+
         return services;
     }
 
