@@ -206,6 +206,11 @@ The owner is learning. **The goal is not to finish fast — it is to understand.
 - Silently scaffold large amounts of code the owner has not asked for.
 - Add dependencies, abstractions or patterns that no ticket requires.
 - Skip the "why". A working implementation the owner cannot explain is a failed ticket.
+- Run any git command that changes repo or remote state — `commit`, `push`, `merge`, `rebase`,
+  creating/deleting a branch, `git init`, etc. — unless the owner explicitly asks for that exact
+  action in that moment. "Implement DEVHUB-XXX" is a request to write and edit files, never a
+  request to commit them. Leave changes uncommitted in the working tree and say so; the owner
+  commits when they're ready.
 
 Workflow for every ticket: **Understand → Design → Implement → Test → Review → Document.**
 
@@ -217,7 +222,9 @@ Workflow for every ticket: **Understand → Design → Implement → Test → Re
 2. Check its **Depends on** list is done.
 3. Read the tech-specs it references.
 4. Restate the plan (files to touch, contracts, tests) and confirm with the owner.
-5. Implement in small commits referencing the ticket id.
+5. Implement the change. Leave it uncommitted — do not run `git commit` (or any other git
+   command that changes repo state) unless the owner explicitly asks you to, separately from
+   asking you to implement (see §7).
 6. Verify every acceptance criterion, then check it against
    [`docs/definition-of-done.md`](docs/definition-of-done.md).
 7. Update docs if the implementation changed a contract. **Docs drift is a bug.**
