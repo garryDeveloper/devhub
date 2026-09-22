@@ -4,10 +4,9 @@ using DevHub.Application.Common;
 namespace DevHub.ArchitectureTests;
 
 /// <summary>
-/// DEVHUB-013's acceptance criterion: "No DTO ... can expose PasswordHash". No DTO exists yet —
-/// <c>User</c>'s is DEVHUB-014/015's job — so this is a forward guard: it passes trivially today
-/// and fails the day a DTO grows a <c>PasswordHash</c> member, instead of relying on review to
-/// catch it.
+/// DEVHUB-013's acceptance criterion: "No DTO ... can expose PasswordHash". Guards
+/// <c>UserDto</c> (DEVHUB-014) and every DTO after it: the day one grows a <c>PasswordHash</c>
+/// member this fails, instead of relying on review to catch it.
 /// </summary>
 public class PasswordHashExposureRules
 {

@@ -7,6 +7,11 @@
   <ItemGroup>
     <!-- IServiceCollection for AddApplication(); no ASP.NET, no hosting. -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
+
+    <!-- DEVHUB-014: one validator per command (backend-architecture.md §9). The core package
+         only: AddApplication() registers validators with its own scan, so the
+         DependencyInjectionExtensions package would be a second way of doing the same thing. -->
+    <PackageReference Include="FluentValidation" Version="12.1.1" />
   </ItemGroup>
 
 </Project>

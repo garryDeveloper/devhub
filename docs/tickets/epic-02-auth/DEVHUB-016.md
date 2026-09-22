@@ -21,9 +21,13 @@ what makes a stolen token a forced logout instead of a silent second session.
 
 ## Tasks
 
-- [ ] `RefreshToken` entity + migration per [`database-schema.md`](../../tech-specs/database-schema.md).
-- [ ] Generate a 256-bit random opaque token; store **only** its SHA-256 hash.
-- [ ] Issue a refresh token on register and login.
+- [x] `RefreshToken` entity + migration per [`database-schema.md`](../../tech-specs/database-schema.md).
+      *Done early in DEVHUB-014/015 (`DEVHUB015_RefreshTokens`), because register and login must
+      return a real refresh token. `created_by_ip` and `user_agent` were not mapped — decide here
+      whether to capture them.*
+- [x] Generate a 256-bit random opaque token; store **only** its SHA-256 hash.
+      *`TokenService.CreateRefreshToken` / `TokenService.Hash` — reuse `Hash` for the lookup.*
+- [x] Issue a refresh token on register and login.
 - [ ] `POST /api/auth/refresh`: validate → issue new pair → revoke the old row and set
       `replaced_by_token_id`.
 - [ ] Reuse detection: presenting an already-revoked token revokes the entire chain and logs a

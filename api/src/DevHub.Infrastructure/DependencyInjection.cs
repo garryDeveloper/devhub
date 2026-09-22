@@ -1,13 +1,20 @@
+using DevHub.Application.Auth;
 using DevHub.Application.Common;
+using DevHub.Application.Users;
 using DevHub.Infrastructure.Identity;
 using DevHub.Infrastructure.Integrations;
 using DevHub.Infrastructure.Persistence;
+using DevHub.Infrastructure.Persistence.Repositories;
 using DevHub.Infrastructure.Storage;
 using DevHub.Infrastructure.Time;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Tokens;
 
 namespace DevHub.Infrastructure;
 
@@ -35,13 +42,65 @@ public static class DependencyInjection
         // reason as the clock above.
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
 
+        services.AddIdentity();
+
         return services;
     }
 
     /// <summary>
+    /// Token issuing, token validation and login lockout (DEVHUB-014/015).
+    /// </summary>
+    private static void AddIdentity(this IServiceCollection services)
+    {
+        services.AddSingleton<ITokenService, TokenService>();
+
+        // Singleton on purpose: the lockout state IS the instance. Scoped would forget every
+        // failure at the end of the request. See the type's remarks for the multi-instance limit.
+        services.AddSingleton<ILoginThrottle, InMemoryLoginThrottle>();
+
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
+
+        // Configured through the options system rather than inline in AddJwtBearer(...) so it
+        // reads the same validated JwtOptions the issuer uses (DEVHUB-007), resolved when the
+        // first token is validated rather than read eagerly from IConfiguration here.
+        services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+            .Configure<IOptions<JwtOptions>>((bearer, jwtOptions) =>
+            {
+                var jwt = jwtOptions.Value;
+
+                // Keep claim names as they are on the wire ("sub", not the
+                // ".../nameidentifier" URI the legacy mapping rewrites them to), so
+                // ICurrentUser reads the same "sub" TokenService wrote.
+                bearer.MapInboundClaims = false;
+
+                bearer.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = jwt.Issuer,
+                    ValidateAudience = true,
+                    ValidAudience = jwt.Audience,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = JwtSigningKey.From(jwt),
+
+                    // Pin the algorithm: a token must not be able to choose how it is verified.
+                    ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+
+                    ValidateLifetime = true,
+                    RequireExpirationTime = true,
+
+                    // The default is five minutes, which silently turns a 15-minute token into
+                    // a 20-minute one and makes expiry tests flaky (DEVHUB-015 notes).
+                    ClockSkew = TimeSpan.Zero,
+
+                    NameClaimType = JwtRegisteredClaimNames.Name,
+                };
+            });
+    }
+
+    /// <summary>
     /// Binds every strongly-typed options class and validates it at startup (DEVHUB-007), not on
-    /// the first request that needs it. Jwt and Storage have no consumer yet (EPIC 2 and EPIC 15
-    /// add them) — validating now means the configuration contract is fixed once, and no later
+    /// the first request that needs it. Storage has no consumer yet (EPIC 15 adds it; Jwt's arrived
+    /// in DEVHUB-015) — validating now means the configuration contract is fixed once, and no later
     /// ticket can ship a feature that silently depends on an unvalidated setting.
     /// </summary>
     private static void AddConfigurationOptions(
@@ -95,5 +154,11 @@ public static class DependencyInjection
         // No handlers exist yet; see the type's remarks. Registered now so the DbContext can be
         // resolved and the dispatch ordering is exercised from the start.
         services.AddScoped<IDomainEventDispatcher, NoOpDomainEventDispatcher>();
+
+        // Scoped like the DbContext they wrap: one unit of work per request, shared by every
+        // repository the handler touches, so one SaveChanges commits all of it together.
+        services.AddScoped<IUnitOfWork, EfUnitOfWork>();
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
     }
 }

@@ -4,7 +4,7 @@ namespace DevHub.Application.Common;
 /// The outcome of an operation that can fail for an expected reason. Expected failures are
 /// returned, not thrown — exceptions are for bugs and for broken invariants (DomainException).
 /// </summary>
-public class Result
+public class Result : IFailureResult<Result>
 {
     protected Result(bool isSuccess, Error? error)
     {
@@ -35,10 +35,12 @@ public class Result
     public static Result<TValue> Success<TValue>(TValue value) => new(value, true, null);
 
     public static Result<TValue> Failure<TValue>(Error error) => new(default, false, error);
+
+    static Result IFailureResult<Result>.FromError(Error error) => Failure(error);
 }
 
 /// <summary>A <see cref="Result"/> that carries a value when it succeeded.</summary>
-public sealed class Result<TValue> : Result
+public sealed class Result<TValue> : Result, IFailureResult<Result<TValue>>
 {
     private readonly TValue? _value;
 
@@ -53,4 +55,22 @@ public sealed class Result<TValue> : Result
         : throw new InvalidOperationException("A failed result has no value.");
 
     public static implicit operator Result<TValue>(TValue value) => Success(value);
+
+    public static implicit operator Result<TValue>(Error error) => Failure<TValue>(error);
+
+    static Result<TValue> IFailureResult<Result<TValue>>.FromError(Error error) => Failure<TValue>(error);
+}
+
+/// <summary>
+/// Lets generic code — a pipeline decorator — build a failed <typeparamref name="TSelf"/>
+/// without knowing whether it is a <see cref="Result"/> or a <see cref="Result{TValue}"/>.
+/// </summary>
+/// <remarks>
+/// A static abstract member rather than reflection: the compiler checks that every result type
+/// can be failed, and <c>TResponse.FromError(error)</c> reads like the call it is.
+/// </remarks>
+public interface IFailureResult<out TSelf>
+    where TSelf : Result
+{
+    static abstract TSelf FromError(Error error);
 }

@@ -31,6 +31,8 @@ public sealed class DevHubDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
 
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // citext gives case-insensitive uniqueness in the database itself, rather than by

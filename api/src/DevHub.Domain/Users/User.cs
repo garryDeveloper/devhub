@@ -68,8 +68,17 @@ public sealed class User : AggregateRoot, IAuditable
 
         // v7 for index locality (CLAUDE.md §4), matching every other aggregate's id generation.
         var id = Guid.CreateVersion7();
-        var normalizedEmail = email.Trim().ToLowerInvariant();
-        return new User(id, normalizedEmail, displayName, passwordHash);
+        return new User(id, NormalizeEmail(email), displayName, passwordHash);
+    }
+
+    /// <summary>
+    /// The one definition of "the same email". Public so lookups (login, the registration
+    /// pre-check, the login lockout key) normalize exactly the way <see cref="Create"/> stored it.
+    /// </summary>
+    public static string NormalizeEmail(string email)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(email);
+        return email.Trim().ToLowerInvariant();
     }
 
     public void ChangeDisplayName(string newDisplayName)

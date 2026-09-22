@@ -24,12 +24,17 @@ Legend: 🔓 public · 🔒 authenticated · 👑 workspace `Owner` · 🪝 webh
 // 201
 { "accessToken": "eyJ…", "expiresIn": 900, "refreshToken": "opaque…",
   "user": { "id": "…", "email": "…", "displayName": "Dario", "avatarUrl": null } }
-// 409 email already registered · 400 weak password / invalid email
+// 409 email already registered (type …/errors/auth.email_taken)
+// 400 weak password / invalid email → errors.password / errors.email
+// 429 more than 10 register+login requests/min from this IP (shared budget) · Retry-After
 ```
 
 ```jsonc
 // POST /api/auth/login   { "email": "...", "password": "..." }
 // 200 same shape as register · 401 invalid credentials (never say which field)
+// 400 only when a field is missing — never for a "wrong-looking" password
+// 429 account locked: 5 failures in 15 min (type …/errors/auth.locked_out) · Retry-After
+// 429 IP rate limit, as for register (type …/errors/rate_limited)
 
 // POST /api/auth/refresh { "refreshToken": "opaque..." }
 // 200 { accessToken, expiresIn, refreshToken }   ← rotated, old one revoked

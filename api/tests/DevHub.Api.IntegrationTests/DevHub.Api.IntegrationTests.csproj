@@ -24,9 +24,14 @@
     <!-- Npgsql directly, to inspect the schema PostgreSQL actually ended up with rather than
          the model EF believes it created. -->
     <PackageReference Include="Npgsql" Version="10.0.3" />
+
+    <!-- DEVHUB-014: WebApplicationFactory<Program>, the real HTTP pipeline in memory (routing,
+         model binding, validation, ProblemDetails and serialization all run for real). -->
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\DevHub.Api\DevHub.Api.csproj" />
     <ProjectReference Include="..\..\src\DevHub.Infrastructure\DevHub.Infrastructure.csproj" />
   </ItemGroup>
 

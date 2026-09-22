@@ -51,6 +51,10 @@ PostgreSQL 16. EF Core code-first; this document describes the intended physical
 
 Index: `(user_id, expires_at)`. Purge revoked/expired rows older than 60 days.
 
+`replaced_by_token_id` is `ON DELETE SET NULL`, so the purge never trips over a chain link.
+Status: created by migration `DEVHUB015_RefreshTokens` **without** `created_by_ip` and
+`user_agent`. Nothing reads them yet; DEVHUB-016 decides whether to add them.
+
 ### workspaces
 
 `id`, `name varchar(80)`, `slug varchar(50) UNIQUE`, `owner_id uuid FK users`,

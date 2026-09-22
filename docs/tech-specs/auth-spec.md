@@ -132,6 +132,16 @@ Anti-patterns to avoid:
 - Rate limits: `POST /api/auth/login` and `/register` 10 requests/minute/IP, plus a per-account
   lockout of 5 failed logins in 15 minutes (returns `429` with `Retry-After`, not a permanent
   lock).
+  - The IP limit is one fixed-window bucket shared by both endpoints (`RateLimitingOptions`,
+    configurable as `RateLimiting:AuthPermitLimit`). It partitions by `RemoteIpAddress`, which
+    behind a load balancer is the balancer's address until forwarded headers are configured
+    (EPIC 16).
+  - The lockout is a sliding window keyed by the normalized email **whether or not the account
+    exists**, so a lockout reveals nothing about which emails are registered.
+  - DECISION (DEVHUB-015): lockout state is **in process memory** (`InMemoryLoginThrottle`
+    behind the `ILoginThrottle` port). Exact with one API instance; with N instances an attacker
+    gets up to N × 5 attempts per window, and a restart clears it. Move it to a table behind the
+    same port when the API scales out.
 
 ---
 

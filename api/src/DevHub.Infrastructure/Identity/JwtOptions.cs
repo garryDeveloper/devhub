@@ -3,9 +3,9 @@ using System.ComponentModel.DataAnnotations;
 namespace DevHub.Infrastructure.Identity;
 
 /// <summary>
-/// Access token signing configuration (auth-spec.md §3). EPIC 2 issues and validates tokens with
-/// these values; this ticket only establishes the fail-fast contract so a missing secret is a
-/// boot-time error, not a 500 on the first login.
+/// Access token signing configuration (auth-spec.md §3). DEVHUB-007 established the fail-fast
+/// contract, so a missing secret is a boot-time error rather than a 500 on the first login;
+/// DEVHUB-015 issues (<see cref="TokenService"/>) and validates (JwtBearer) with these values.
 /// </summary>
 public sealed class JwtOptions
 {

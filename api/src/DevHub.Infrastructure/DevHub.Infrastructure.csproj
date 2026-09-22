@@ -22,6 +22,12 @@
     <!-- DEVHUB-013: just PasswordHasher<TUser> and its options — not the full Identity.Stores
          package, which drags in IUserStore/EF conventions this project defines for itself. -->
     <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.12" />
+
+    <!-- DEVHUB-015: issuing and validating access tokens. Lives here, not in DevHub.Api,
+         because the signing configuration (JwtOptions) is an Infrastructure type and the API
+         may not name one (DEVHUB-002). Issuing and validating from the same options object
+         also means the two can never disagree about the secret, issuer or audience. -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,5 +1,8 @@
+using System.Globalization;
+using System.Threading.RateLimiting;
 using DevHub.Api.Configuration;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 
 namespace DevHub.Api.Extensions;
@@ -19,6 +22,16 @@ public static class ServiceCollectionExtensions
         services.AddApiControllers();
         services.AddApiCors(configuration, environment);
         services.AddApiSwagger();
+        services.AddApiRateLimiting(configuration);
+
+        // RFC 7807 bodies for everything the controllers do not produce themselves: unhandled
+        // exceptions (UseExceptionHandler) and bare status codes such as JwtBearer's 401
+        // challenge (UseStatusCodePages). Never a stack trace, in any environment.
+        services.AddProblemDetails();
+
+        // The authentication scheme itself (JwtBearer) is registered by AddInfrastructure(),
+        // next to the signing options it shares with the token issuer.
+        services.AddAuthorization();
 
         // No checks registered yet, so this only answers "is the process alive". The database
         // and storage checks, and the /health/live and /health/ready split, are DEVHUB-110.
@@ -31,6 +44,12 @@ public static class ServiceCollectionExtensions
     {
         services.AddControllers(options =>
         {
+            // Without this, [ApiController] treats every non-nullable string on a request body
+            // as [Required] and rejects a missing field before FluentValidation runs, with
+            // PascalCase keys and different wording. One validator per command is the single
+            // source of input rules (backend-architecture.md §9), so MVC stays out of it.
+            options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+
             options.Conventions.Add(new RoutePrefixConvention("api"));
 
             // Every endpoint can fail these three ways and every error is an RFC 7807
@@ -74,6 +93,69 @@ public static class ServiceCollectionExtensions
                     .AllowAnyHeader()
                     .AllowAnyMethod();
             });
+        });
+    }
+
+    /// <summary>
+    /// Per-IP limit on the auth endpoints (auth-spec.md §6): 10 requests a minute. The per-account
+    /// login lockout is separate, in the Application layer (ILoginThrottle).
+    /// </summary>
+    /// <remarks>
+    /// Partitioned by <c>RemoteIpAddress</c>. Behind the Elastic Beanstalk load balancer that is
+    /// the balancer's address, not the client's, until forwarded headers are configured (EPIC 16):
+    /// until then every client would share one bucket. Local and Docker runs are unaffected.
+    /// </remarks>
+    private static void AddApiRateLimiting(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<RateLimitingOptions>()
+            .Bind(configuration.GetSection(RateLimitingOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+            options.AddPolicy(RateLimitingOptions.AuthPolicy, httpContext =>
+            {
+                // Read per partition, not captured at registration, so tests can override the
+                // limit through configuration like any other setting.
+                var limits = httpContext.RequestServices.GetRequiredService<IOptions<RateLimitingOptions>>().Value;
+
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = limits.AuthPermitLimit,
+                        Window = TimeSpan.FromMinutes(1),
+
+                        // Reject, do not queue: holding a brute-forcer's requests open until the
+                        // window resets only spends our connections on them.
+                        QueueLimit = 0,
+                    });
+            });
+
+            options.OnRejected = async (context, cancellationToken) =>
+            {
+                if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+                {
+                    context.HttpContext.Response.Headers.RetryAfter =
+                        ((int)Math.Ceiling(retryAfter.TotalSeconds)).ToString(CultureInfo.InvariantCulture);
+                }
+
+                var problemDetails = context.HttpContext.RequestServices.GetRequiredService<IProblemDetailsService>();
+                await problemDetails.WriteAsync(new ProblemDetailsContext
+                {
+                    HttpContext = context.HttpContext,
+                    ProblemDetails =
+                    {
+                        Status = StatusCodes.Status429TooManyRequests,
+                        Title = "Too many requests.",
+                        Detail = "Too many requests from this address. Try again later.",
+                        Type = "https://devhub.dev/errors/rate_limited",
+                    },
+                });
+            };
         });
     }
 
