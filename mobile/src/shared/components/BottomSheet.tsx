@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
+
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 
@@ -14,7 +15,12 @@ export interface BottomSheetProps {
 // replace this later if a screen actually needs one (no heavyweight kit up front).
 export function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
       <View style={styles.overlay}>
         <Pressable
           style={StyleSheet.absoluteFill}

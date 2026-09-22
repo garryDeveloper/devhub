@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../../shared/api/client';
 import { qk } from '../../shared/api/queryKeys';
-import { Skeleton } from '../../shared/components/Skeleton';
 import { ErrorState } from '../../shared/components/ErrorState';
+import { Skeleton } from '../../shared/components/Skeleton';
 
 interface HealthResponse {
   status: string;
@@ -20,8 +20,8 @@ export function HealthCheckPage() {
     <div className="space-y-4">
       <h1 className="text-lg font-semibold text-slate-900">API health</h1>
       <p className="text-sm text-slate-500">
-        Confirms <code>VITE_API_URL</code> ({import.meta.env.VITE_API_URL}) and the API client are
-        wired up.
+        Confirms <code>VITE_API_URL</code> ({import.meta.env.VITE_API_URL}) and
+        the API client are wired up.
       </p>
 
       {isPending && <Skeleton className="h-10 w-48" />}

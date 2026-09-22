@@ -1,5 +1,5 @@
+import type { MouseEvent, ReactNode } from 'react';
 import { useId } from 'react';
-import type { ReactNode, MouseEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { cn } from '../lib/cn';
@@ -14,7 +14,13 @@ export interface DrawerProps {
 
 // Used for the issue detail overlay (docs/screens-and-navigation.md §2) and,
 // in this shell, for the mobile nav panel below the md breakpoint.
-export function Drawer({ open, onClose, title, children, side = 'right' }: DrawerProps) {
+export function Drawer({
+  open,
+  onClose,
+  title,
+  children,
+  side = 'right',
+}: DrawerProps) {
   const titleId = useId();
   const containerRef = useFocusTrap(open, onClose);
 
@@ -25,7 +31,10 @@ export function Drawer({ open, onClose, title, children, side = 'right' }: Drawe
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex bg-slate-900/40" onClick={handleBackdropClick}>
+    <div
+      className="fixed inset-0 z-50 flex bg-slate-900/40"
+      onClick={handleBackdropClick}
+    >
       <div
         ref={containerRef}
         role="dialog"

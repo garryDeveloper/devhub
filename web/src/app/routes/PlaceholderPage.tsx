@@ -9,7 +9,9 @@ export function PlaceholderPage({ title }: { title: string }) {
   return (
     <div className="space-y-2">
       <h1 className="text-lg font-semibold text-slate-900">{title}</h1>
-      <p className="text-sm text-slate-500">This screen is built in its own ticket.</p>
+      <p className="text-sm text-slate-500">
+        This screen is built in its own ticket.
+      </p>
       {hasParams && (
         <pre className="mt-4 w-fit rounded-md bg-slate-100 px-3 py-2 text-xs text-slate-600">
           {JSON.stringify(params, null, 2)}

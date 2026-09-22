@@ -8,7 +8,11 @@ export interface ErrorStateProps {
 
 // Message + Retry — every failed data view uses this, not a bespoke one
 // (docs/tech-specs/frontend-web-architecture.md §6).
-export function ErrorState({ title = 'Something went wrong', message, onRetry }: ErrorStateProps) {
+export function ErrorState({
+  title = 'Something went wrong',
+  message,
+  onRetry,
+}: ErrorStateProps) {
   return (
     <div
       role="alert"
@@ -17,7 +21,12 @@ export function ErrorState({ title = 'Something went wrong', message, onRetry }:
       <p className="text-sm font-medium text-red-900">{title}</p>
       <p className="text-sm text-red-700">{message}</p>
       {onRetry && (
-        <Button variant="secondary" size="sm" className="mt-2" onClick={onRetry}>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="mt-2"
+          onClick={onRetry}
+        >
           Retry
         </Button>
       )}
