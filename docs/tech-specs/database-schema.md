@@ -41,19 +41,25 @@ PostgreSQL 16. EF Core code-first; this document describes the intended physical
 |---|---|---|
 | id | uuid | PK |
 | user_id | uuid | FK → users ON DELETE CASCADE |
+| family_id | uuid | NOT NULL — the session; = id of its first token |
 | token_hash | varchar(64) | UNIQUE NOT NULL (SHA-256 hex) |
 | expires_at | timestamptz | NOT NULL |
 | revoked_at | timestamptz | NULL |
-| replaced_by_token_id | uuid | NULL, FK → refresh_tokens |
-| created_by_ip | inet | NULL |
-| user_agent | varchar(400) | NULL |
+| replaced_by_token_id | uuid | NULL, FK → refresh_tokens ON DELETE SET NULL |
 | created_at | timestamptz | NOT NULL |
 
-Index: `(user_id, expires_at)`. Purge revoked/expired rows older than 60 days.
+Indexes: `(user_id, expires_at)`, `(family_id)` (reuse detection revokes a family in one UPDATE).
+Optimistic concurrency uses PostgreSQL's system column `xmin` — no column of our own.
+Purge rows whose `expires_at` is more than 60 days past (revoked rows are covered: every row
+expires). See auth-spec.md §4.
 
 `replaced_by_token_id` is `ON DELETE SET NULL`, so the purge never trips over a chain link.
-Status: created by migration `DEVHUB015_RefreshTokens` **without** `created_by_ip` and
-`user_agent`. Nothing reads them yet; DEVHUB-016 decides whether to add them.
+Status: created by `DEVHUB015_RefreshTokens`; `family_id` added by `DEVHUB016_RefreshTokenFamilies`
+(backfilled as `family_id = id`).
+
+DECISION (DEVHUB-016): `created_by_ip` and `user_agent` are **not** stored. Nothing reads them
+until session listing (post-MVP, auth-spec.md §8), and an IP address is personal data not to
+collect before there is a use for it. Adding them then is a two-column migration.
 
 ### workspaces
 

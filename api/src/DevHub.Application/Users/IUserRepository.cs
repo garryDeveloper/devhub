@@ -17,5 +17,7 @@ public interface IUserRepository
 
     Task<User?> GetByEmailAsync(string normalizedEmail, CancellationToken cancellationToken);
 
+    Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
+
     void Add(User user);
 }

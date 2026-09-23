@@ -61,17 +61,40 @@ impossible to revoke; a session lookup on every request would be revocable but s
 
 ```text
 POST /api/auth/refresh { refreshToken }
-   ↓ hash it (SHA-256) and look up the row
-   ↓ valid?  revoked_at IS NULL AND expires_at > now
-   ↓ yes → issue a new access token AND a new refresh token
-           mark the old row revoked, set replaced_by_token_id
-   ↓ no  → 401
+   ↓ hash it (SHA-256) and look up the row by token_hash
+   ↓ not found                → 401
+   ↓ revoked_at IS NOT NULL   → reuse: revoke the family, log a security warning, 401
+   ↓ expires_at <= now        → 401
+   ↓ else → issue a new access token AND a new refresh token (same family_id)
+            mark the old row revoked, set replaced_by_token_id — one transaction
 ```
 
-**Reuse detection:** if a refresh token that is already revoked is presented, the whole chain
-(follow `replaced_by_token_id` to the head, then revoke every descendant) is revoked and the
-event is logged as a security event. That turns a stolen token into a forced logout instead of a
-silent parallel session.
+Every failure is the same `401 auth.invalid_refresh_token`; the client's only correct reaction to
+any of them is to send the user to login.
+
+**Families.** Register and login start a new *family* (`family_id` = the first token's id); every
+rotation's successor inherits it. A family is one session, with at most one active token.
+
+**Reuse detection:** if a refresh token that is already revoked is presented, every still-active
+token of its family is revoked in one `UPDATE … WHERE family_id = @f` and the event is logged as
+a security warning (user, family and token ids — never the token). That turns a stolen token into
+a forced logout instead of a silent parallel session. Other sessions of the same user are not
+touched.
+
+- DECISION (DEVHUB-016): revoke by `family_id` instead of walking `replaced_by_token_id` link by
+  link. A 30-day session refreshed every 15 minutes is a chain of ~2,900 rows; the family makes it
+  one indexed statement. `replaced_by_token_id` stays as the audit trail.
+- DECISION (DEVHUB-016): **optimistic concurrency** on PostgreSQL's `xmin`. Two parallel refreshes
+  with the same token both read it as active; the second UPDATE finds `xmin` changed and fails,
+  so exactly one successor is ever issued and the loser gets `401`. If the loser reads *after* the
+  winner commits, it sees a revoked token and triggers reuse detection, which also ends the
+  winner's session — hence the single-flight client rule below.
+- No separate fixed-time comparison: the lookup is by the SHA-256 of the presented token, whose
+  bytes an attacker cannot choose, so the index lookup's timing reveals nothing about stored
+  tokens.
+- Cleanup: `RefreshTokenCleanupService` (in-process `BackgroundService`) deletes rows whose
+  `expires_at` is more than 60 days past, one minute after startup and then daily. Revoked rows
+  need no separate rule — every row expires.
 
 Client rules:
 
@@ -82,7 +105,7 @@ Client rules:
   SameSite=Strict` cookie if the API sets one, otherwise `localStorage` with the XSS trade-off
   documented in DEVHUB-020. Mobile always uses `expo-secure-store`.
 
-Logout revokes the presented refresh token (and its chain). It cannot revoke an already-issued
+Logout revokes the presented refresh token (and its family). It cannot revoke an already-issued
 access token — the ≤15 minute window is the accepted trade-off, documented here on purpose.
 
 ---
@@ -136,6 +159,10 @@ Anti-patterns to avoid:
     configurable as `RateLimiting:AuthPermitLimit`). It partitions by `RemoteIpAddress`, which
     behind a load balancer is the balancer's address until forwarded headers are configured
     (EPIC 16).
+  - DECISION (DEVHUB-016): `POST /api/auth/refresh` is **outside** that bucket
+    (`DisableRateLimiting`). The limit exists to slow password guessing; a 256-bit token cannot
+    be guessed, and every user behind one NAT refreshing every 15 minutes would otherwise spend
+    each other's login attempts.
   - The lockout is a sliding window keyed by the normalized email **whether or not the account
     exists**, so a lockout reveals nothing about which emails are registered.
   - DECISION (DEVHUB-015): lockout state is **in process memory** (`InMemoryLoginThrottle`

@@ -38,7 +38,10 @@ Legend: 🔓 public · 🔒 authenticated · 👑 workspace `Owner` · 🪝 webh
 
 // POST /api/auth/refresh { "refreshToken": "opaque..." }
 // 200 { accessToken, expiresIn, refreshToken }   ← rotated, old one revoked
-// 401 expired/revoked/unknown  (reuse revokes the whole chain)
+// 401 expired/revoked/unknown, all as type …/errors/auth.invalid_refresh_token
+//     (reuse of a revoked token revokes its whole session/family)
+// 400 only when refreshToken is missing
+// not subject to the register+login IP rate limit (auth-spec.md §6)
 
 // POST /api/auth/logout  { "refreshToken": "opaque..." }  → 204
 

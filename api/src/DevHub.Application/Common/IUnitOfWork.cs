@@ -10,5 +10,8 @@ public interface IUnitOfWork
     /// A unique index rejected the write. Handlers that can race on a unique value catch this
     /// and turn it into a <see cref="ErrorType.Conflict"/>.
     /// </exception>
+    /// <exception cref="ConcurrencyConflictException">
+    /// A row with a concurrency token was changed by another request since it was loaded.
+    /// </exception>
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }

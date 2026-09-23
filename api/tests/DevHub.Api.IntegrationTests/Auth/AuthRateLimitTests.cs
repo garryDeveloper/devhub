@@ -28,6 +28,20 @@ public sealed class AuthRateLimitTests(AuthRateLimitTests.LimitedApiFactory api)
         Assert.NotNull(rejected.Headers.RetryAfter);
     }
 
+    [Fact]
+    public async Task Refresh_is_outside_the_register_and_login_budget()
+    {
+        var client = api.CreateClient();
+
+        // Unknown tokens are fine: a rate-limited request never reaches the handler, so anything
+        // other than 429 proves the limiter let it through.
+        for (var i = 0; i < Limit * 3; i++)
+        {
+            var response = await client.RefreshAsync("any-token");
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+    }
+
     public sealed class LimitedApiFactory : DevHubApiFactory
     {
         protected override int AuthPermitLimit => Limit;

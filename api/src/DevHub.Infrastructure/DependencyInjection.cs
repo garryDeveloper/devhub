@@ -48,7 +48,8 @@ public static class DependencyInjection
     }
 
     /// <summary>
-    /// Token issuing, token validation and login lockout (DEVHUB-014/015).
+    /// Token issuing, token validation and login lockout (DEVHUB-014/015), refresh token
+    /// cleanup (DEVHUB-016).
     /// </summary>
     private static void AddIdentity(this IServiceCollection services)
     {
@@ -57,6 +58,11 @@ public static class DependencyInjection
         // Singleton on purpose: the lockout state IS the instance. Scoped would forget every
         // failure at the end of the request. See the type's remarks for the multi-instance limit.
         services.AddSingleton<ILoginThrottle, InMemoryLoginThrottle>();
+
+        // Registered as itself too, so tests can resolve it and run one purge on demand; the
+        // hosted-service registration forwards to that same singleton instance.
+        services.AddSingleton<RefreshTokenCleanupService>();
+        services.AddHostedService(provider => provider.GetRequiredService<RefreshTokenCleanupService>());
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
 

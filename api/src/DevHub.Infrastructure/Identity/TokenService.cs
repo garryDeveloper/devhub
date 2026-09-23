@@ -53,24 +53,32 @@ internal sealed class TokenService(IOptions<JwtOptions> options, ITimeProvider c
 
     public IssuedRefreshToken CreateRefreshToken(User user)
     {
-        // 256 bits from the OS CSPRNG. Never Random, never a Guid: a v4 Guid carries only 122
-        // random bits, and a v7 Guid is partly a timestamp.
-        var value = Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(32));
-
-        var entity = RefreshToken.Issue(
-            user.Id,
-            Hash(value),
-            clock.UtcNow,
-            TimeSpan.FromDays(options.Value.RefreshTokenDays));
+        var value = NewOpaqueValue();
+        var entity = RefreshToken.Issue(user.Id, Hash(value), clock.UtcNow, RefreshTokenLifetime);
 
         return new IssuedRefreshToken(value, entity);
     }
 
+    public IssuedRefreshToken RotateRefreshToken(RefreshToken current)
+    {
+        var value = NewOpaqueValue();
+        var successor = current.Rotate(Hash(value), clock.UtcNow, RefreshTokenLifetime);
+
+        return new IssuedRefreshToken(value, successor);
+    }
+
+    public string HashRefreshToken(string refreshToken) => Hash(refreshToken);
+
+    private TimeSpan RefreshTokenLifetime => TimeSpan.FromDays(options.Value.RefreshTokenDays);
+
+    // 256 bits from the OS CSPRNG. Never Random, never a Guid: a v4 Guid carries only 122 random
+    // bits, and a v7 Guid is partly a timestamp.
+    private static string NewOpaqueValue() => Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(32));
+
     /// <summary>
     /// SHA-256, not PBKDF2: the input is 256 random bits, not a human-chosen password, so there
-    /// is nothing to brute-force and no reason to make every refresh slow. DEVHUB-016 reuses this
-    /// to look up a presented token.
+    /// is nothing to brute-force and no reason to make every refresh slow.
     /// </summary>
-    internal static string Hash(string refreshToken) =>
+    private static string Hash(string refreshToken) =>
         Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(refreshToken)));
 }

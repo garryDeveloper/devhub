@@ -2,6 +2,7 @@ using DevHub.Api.Configuration;
 using DevHub.Api.Extensions;
 using DevHub.Application.Auth.Contracts;
 using DevHub.Application.Auth.Login;
+using DevHub.Application.Auth.Refresh;
 using DevHub.Application.Auth.Register;
 using DevHub.Application.Common;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -29,6 +30,13 @@ public static class AuthEndpoints
         auth.MapPost("/login", LoginAsync)
             .WithName("Login");
 
+        auth.MapPost("/refresh", RefreshAsync)
+            .WithName("RefreshToken")
+            // Outside the shared register+login budget. That limit exists to slow password
+            // guessing; a 256-bit token cannot be guessed, and a refresh every 15 minutes from
+            // each user behind one office NAT would otherwise spend other people's login attempts.
+            .DisableRateLimiting();
+
         return api;
     }
 
@@ -52,6 +60,19 @@ public static class AuthEndpoints
     private static async Task<Results<Ok<AuthResponse>, ProblemHttpResult>> LoginAsync(
         LoginCommand command,
         ICommandHandler<LoginCommand, Result<AuthResponse>> handler,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(command, cancellationToken);
+
+        return result.IsSuccess
+            ? TypedResults.Ok(result.Value)
+            : result.Error!.ToProblem(httpContext);
+    }
+
+    private static async Task<Results<Ok<RefreshResponse>, ProblemHttpResult>> RefreshAsync(
+        RefreshCommand command,
+        ICommandHandler<RefreshCommand, Result<RefreshResponse>> handler,
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {

@@ -12,6 +12,11 @@
          only: AddApplication() registers validators with its own scan, so the
          DependencyInjectionExtensions package would be a second way of doing the same thing. -->
     <PackageReference Include="FluentValidation" Version="12.1.1" />
+
+    <!-- DEVHUB-016: ILogger for security events raised by handlers (refresh token reuse). The
+         abstractions only, at the same version as DI.Abstractions above; the logging pipeline
+         itself is configured by the host. -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
   </ItemGroup>
 
 </Project>

@@ -23,4 +23,14 @@ public static class AuthApi
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<AuthResponse>())!;
     }
+
+    public static Task<HttpResponseMessage> RefreshAsync(this HttpClient client, string refreshToken) =>
+        client.PostAsJsonAsync("/api/auth/refresh", new { refreshToken });
+
+    public static async Task<RefreshResponse> RefreshOkAsync(this HttpClient client, string refreshToken)
+    {
+        var response = await client.RefreshAsync(refreshToken);
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<RefreshResponse>())!;
+    }
 }

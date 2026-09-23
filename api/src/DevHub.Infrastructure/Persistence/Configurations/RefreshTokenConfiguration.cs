@@ -8,9 +8,10 @@ namespace DevHub.Infrastructure.Persistence.Configurations;
 /// Maps <see cref="RefreshToken"/> to <c>refresh_tokens</c> per database-schema.md §2.
 /// </summary>
 /// <remarks>
-/// <c>created_by_ip</c> and <c>user_agent</c> from the spec are not mapped yet. Nothing reads
-/// them until session listing (post-MVP, auth-spec.md §8), and DEVHUB-016 decides whether to
-/// capture them. Adding two nullable columns later is a trivial migration.
+/// <c>created_by_ip</c> and <c>user_agent</c> are deliberately not mapped (decided in
+/// DEVHUB-016): nothing reads them until session listing (post-MVP, auth-spec.md §8), and an IP
+/// address is personal data we should not collect before there is a use for it. Adding two
+/// nullable columns then is a trivial migration.
 /// </remarks>
 internal sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
 {
@@ -48,5 +49,21 @@ internal sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refre
             .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasIndex(token => new { token.UserId, token.ExpiresAt });
+
+        // Reuse detection revokes a whole family in one UPDATE ... WHERE family_id = @f.
+        builder.Property(token => token.FamilyId).IsRequired();
+        builder.HasIndex(token => token.FamilyId);
+
+        // Optimistic concurrency on PostgreSQL's system column xmin — the id of the transaction
+        // that last wrote the row. Two parallel refreshes with the same token both read it
+        // active; both try UPDATE ... WHERE id = @id AND xmin = @read. The second waits on the
+        // first's row lock, then finds xmin changed, matches nothing and fails, so exactly one
+        // successor is ever issued. A shadow property: this is persistence plumbing, not
+        // domain state, so the entity never sees it.
+        builder.Property<uint>("xmin")
+            .HasColumnName("xmin")
+            .HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
     }
 }

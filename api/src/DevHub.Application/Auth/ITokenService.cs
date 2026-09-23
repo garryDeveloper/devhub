@@ -15,10 +15,22 @@ public interface ITokenService
     AccessToken CreateAccessToken(User user);
 
     /// <summary>
-    /// A fresh opaque token. <see cref="IssuedRefreshToken.Value"/> goes to the client exactly once;
-    /// <see cref="IssuedRefreshToken.Entity"/> holds only its hash and is what gets stored.
+    /// A fresh opaque token that starts a new session (family). <see cref="IssuedRefreshToken.Value"/>
+    /// goes to the client exactly once; <see cref="IssuedRefreshToken.Entity"/> holds only its hash
+    /// and is what gets stored.
     /// </summary>
     IssuedRefreshToken CreateRefreshToken(User user);
+
+    /// <summary>
+    /// A fresh opaque token that succeeds <paramref name="current"/> in its session, via
+    /// <see cref="RefreshToken.Rotate"/> — which also revokes <paramref name="current"/>.
+    /// </summary>
+    IssuedRefreshToken RotateRefreshToken(RefreshToken current);
+
+    /// <summary>
+    /// The value stored in <c>token_hash</c> for a raw token, so a presented token can be looked up.
+    /// </summary>
+    string HashRefreshToken(string refreshToken);
 }
 
 public sealed record AccessToken(string Value, TimeSpan Lifetime);

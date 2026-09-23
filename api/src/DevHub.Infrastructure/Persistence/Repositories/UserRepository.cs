@@ -12,5 +12,8 @@ internal sealed class UserRepository(DevHubDbContext dbContext) : IUserRepositor
     public Task<User?> GetByEmailAsync(string normalizedEmail, CancellationToken cancellationToken) =>
         dbContext.Users.SingleOrDefaultAsync(user => user.Email == normalizedEmail, cancellationToken);
 
+    public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
+        await dbContext.Users.FindAsync([id], cancellationToken).ConfigureAwait(false);
+
     public void Add(User user) => dbContext.Users.Add(user);
 }
