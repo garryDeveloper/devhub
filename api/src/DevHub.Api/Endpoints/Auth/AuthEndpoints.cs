@@ -2,6 +2,7 @@ using DevHub.Api.Configuration;
 using DevHub.Api.Extensions;
 using DevHub.Application.Auth.Contracts;
 using DevHub.Application.Auth.Login;
+using DevHub.Application.Auth.Logout;
 using DevHub.Application.Auth.Refresh;
 using DevHub.Application.Auth.Register;
 using DevHub.Application.Common;
@@ -35,6 +36,13 @@ public static class AuthEndpoints
             // Outside the shared register+login budget. That limit exists to slow password
             // guessing; a 256-bit token cannot be guessed, and a refresh every 15 minutes from
             // each user behind one office NAT would otherwise spend other people's login attempts.
+            .DisableRateLimiting();
+
+        // Anonymous like /refresh: the refresh token is the credential. Requiring a Bearer token
+        // would force a client whose access token just expired to rotate its refresh token only
+        // to revoke it. Same rate-limit reasoning as /refresh.
+        auth.MapPost("/logout", LogoutAsync)
+            .WithName("Logout")
             .DisableRateLimiting();
 
         return api;
@@ -81,5 +89,17 @@ public static class AuthEndpoints
         return result.IsSuccess
             ? TypedResults.Ok(result.Value)
             : result.Error!.ToProblem(httpContext);
+    }
+
+    // The body is optional (nullable parameter): an empty request is a logout with nothing to
+    // revoke, and gets the same 204 as everything else (DEVHUB-017).
+    private static async Task<NoContent> LogoutAsync(
+        LogoutCommand? command,
+        ICommandHandler<LogoutCommand, Result> handler,
+        CancellationToken cancellationToken)
+    {
+        await handler.HandleAsync(command ?? new LogoutCommand(null), cancellationToken);
+
+        return TypedResults.NoContent();
     }
 }

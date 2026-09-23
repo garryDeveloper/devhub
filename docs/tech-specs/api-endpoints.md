@@ -14,7 +14,7 @@ Legend: 🔓 public · 🔒 authenticated · 👑 workspace `Owner` · 🪝 webh
 | POST | `/api/auth/register` | 🔓 | DEVHUB-014 |
 | POST | `/api/auth/login` | 🔓 | DEVHUB-015 |
 | POST | `/api/auth/refresh` | 🔓 | DEVHUB-016 |
-| POST | `/api/auth/logout` | 🔒 | DEVHUB-017 |
+| POST | `/api/auth/logout` | 🔓 | DEVHUB-017 |
 | GET | `/api/me` | 🔒 | DEVHUB-019 |
 | PATCH | `/api/me` | 🔒 | DEVHUB-019 |
 
@@ -44,6 +44,10 @@ Legend: 🔓 public · 🔒 authenticated · 👑 workspace `Owner` · 🪝 webh
 // not subject to the register+login IP rate limit (auth-spec.md §6)
 
 // POST /api/auth/logout  { "refreshToken": "opaque..." }  → 204
+// always 204 — garbage, unknown, revoked, missing token or empty body included (never reveals
+// token validity; idempotent). Revokes the token's whole session/family. Anonymous: the refresh
+// token is the credential. Already-issued access tokens stay valid ≤ 15 min (auth-spec.md §4).
+// not subject to the register+login IP rate limit (auth-spec.md §6)
 
 // GET /api/me → 200 UserDto
 // PATCH /api/me { "displayName"?, "avatarAttachmentId"? } → 200 UserDto

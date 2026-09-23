@@ -105,8 +105,52 @@ Client rules:
   SameSite=Strict` cookie if the API sets one, otherwise `localStorage` with the XSS trade-off
   documented in DEVHUB-020. Mobile always uses `expo-secure-store`.
 
-Logout revokes the presented refresh token (and its family). It cannot revoke an already-issued
-access token — the ≤15 minute window is the accepted trade-off, documented here on purpose.
+### Logout (DEVHUB-017)
+
+```text
+POST /api/auth/logout { refreshToken }          anonymous · no rate limit · always 204
+   ↓ missing/empty token      → 204
+   ↓ hash, look up by token_hash
+   ↓ not found                → 204
+   ↓ found (any state)        → revoke every active token of its family → 204
+```
+
+- **Always `204`.** Logout is idempotent (a second call finds the family already dead), and
+  answering differently for an unknown, expired or revoked token would make the endpoint an
+  oracle for token validity. Garbage, an empty string or an empty body are all `204`, not `400`.
+- **Revokes the family, not just the token.** A stale, already-rotated token (e.g. another tab)
+  still ends the session. It uses the same `UPDATE … WHERE family_id = @f` as reuse detection.
+  It is not logged as reuse: presenting a token in order to *end* a session is not an attack.
+  Other sessions of the same user are not touched; "log out all devices" is post-MVP (§8).
+- DECISION (DEVHUB-017): **anonymous**, like `/refresh`. The refresh token is the credential.
+  Requiring a Bearer token would force a client whose access token had just expired to rotate
+  its refresh token only to revoke it. Outside the register+login rate-limit bucket for the
+  same reasons as `/refresh` (§6).
+
+**Residual access-token window.** Logout cannot revoke an access token that was already issued.
+It stays valid until its `exp`, **at most 15 minutes** after logout. This is the accepted cost of
+stateless JWTs, and it is pinned by the test
+`LogoutTests.An_access_token_issued_before_logout_stays_valid_until_it_expires`.
+
+- The alternative is an access-token **denylist**: store the `jti` of logged-out tokens until
+  their `exp`, and check it on every request. That closes the window, but it adds a store lookup
+  to *every* authenticated request, which is exactly what a stateless JWT exists to avoid. It also
+  adds a store that every API instance must share. Not worth it for the MVP. The honest
+  mitigations are the short lifetime and the client clearing the token from memory.
+
+**Client contract** (implemented in DEVHUB-020 web / DEVHUB-022 mobile):
+
+1. Read the stored refresh token, then call `POST /api/auth/logout` with it. Do not block the UI
+   on the result, and ignore failures: there is nothing the user can do about a failed logout,
+   and the local cleanup below is what actually logs them out on this device.
+2. Clear the in-memory access token.
+3. Clear the stored refresh token (web: `localStorage` / the cookie; mobile: `expo-secure-store`).
+4. Clear the TanStack Query cache (`queryClient.clear()`), so the next user never sees the
+   previous user's data.
+5. Redirect to login (web `/login`; mobile: reset navigation to `AuthStack`) with history
+   replaced, so going back cannot re-enter protected screens.
+
+Step 1 reads the refresh token *before* step 3 clears it, which is why the order matters.
 
 ---
 
@@ -159,7 +203,7 @@ Anti-patterns to avoid:
     configurable as `RateLimiting:AuthPermitLimit`). It partitions by `RemoteIpAddress`, which
     behind a load balancer is the balancer's address until forwarded headers are configured
     (EPIC 16).
-  - DECISION (DEVHUB-016): `POST /api/auth/refresh` is **outside** that bucket
+  - DECISION (DEVHUB-016, extended to `/logout` in DEVHUB-017): `POST /api/auth/refresh` is **outside** that bucket
     (`DisableRateLimiting`). The limit exists to slow password guessing; a 256-bit token cannot
     be guessed, and every user behind one NAT refreshing every 15 minutes would otherwise spend
     each other's login attempts.

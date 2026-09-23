@@ -21,18 +21,27 @@ valid for at most 15 minutes. Document that rather than pretending otherwise.
 
 ## Tasks
 
-- [ ] `POST /api/auth/logout` accepting the refresh token; revoke it and its chain.
-- [ ] Return `204` even if the token is already invalid (logout is idempotent, and it must not
+- [x] `POST /api/auth/logout` accepting the refresh token; revoke it and its chain.
+      *`LogoutHandler` revokes the token's **family** (the DEVHUB-016 "chain"), so a stale rotated
+      token also ends the session. **Decided: anonymous** (🔓, the refresh token is the credential)
+      and outside the auth rate-limit bucket, like `/refresh` (auth-spec.md §4, §6).*
+- [x] Return `204` even if the token is already invalid (logout is idempotent, and it must not
       reveal token validity).
-- [ ] Document the client contract: clear the in-memory access token, clear stored refresh
-      token, clear the query cache, redirect to login.
-- [ ] Tests: after logout the refresh token returns `401`; logout twice still returns `204`.
+      *Also for an empty/missing token and an empty body: no validator, nullable body parameter.*
+- [x] Document the client contract: clear the in-memory access token, clear stored refresh
+      token, clear the query cache, redirect to login. *auth-spec.md §4 "Client contract".*
+- [x] Tests: after logout the refresh token returns `401`; logout twice still returns `204`.
+      *`LogoutTests`, plus: garbage/empty → 204, a stale token ends the session, other devices
+      survive, no access token needed, and the residual access-token window is pinned by a test.*
 
 ## Acceptance criteria
 
-- [ ] Logout revokes the refresh session.
-- [ ] Calling logout with garbage returns `204`, not `400`.
-- [ ] The residual access-token window is written down in the ticket and in the spec.
+- [x] Logout revokes the refresh session.
+- [x] Calling logout with garbage returns `204`, not `400`.
+- [x] The residual access-token window is written down in the ticket and in the spec.
+      *An access token issued before logout stays valid until its `exp`: **at most 15 minutes**
+      after logout. This is an accepted trade-off. A `jti` denylist would close the window, but
+      only by adding a store lookup to every request (auth-spec.md §4).*
 
 ## Technical notes
 

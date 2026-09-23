@@ -33,4 +33,7 @@ public static class AuthApi
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<RefreshResponse>())!;
     }
+
+    public static Task<HttpResponseMessage> LogoutAsync(this HttpClient client, string? refreshToken) =>
+        client.PostAsJsonAsync("/api/auth/logout", new { refreshToken });
 }
