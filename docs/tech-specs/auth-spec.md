@@ -192,8 +192,28 @@ Anti-patterns to avoid:
 
 ## 6. Endpoint protection
 
-- `[Authorize]` is the default via a fallback policy; public endpoints opt out explicitly with
-  `[AllowAnonymous]` (`/api/auth/*`, `/health*`, webhooks).
+- Protected by default via a **fallback policy** (`RequireAuthenticatedUser`); public endpoints
+  opt out explicitly with `.AllowAnonymous()` (`/api/auth/*`, `/health*`, webhooks).
+  - DECISION (DEVHUB-018): two layers. The `/api` group's `RequireAuthorization()` marks every
+    API endpoint explicitly; the fallback policy catches anything with no metadata at all —
+    including routes mapped outside `/api`. Forgetting a marking fails closed: a public endpoint
+    breaks, a private one never opens.
+  - The fallback also applies when **no endpoint matched**: an anonymous request for an unknown
+    route gets `401`, not `404`, so routes are not discoverable without a token. Authenticated,
+    it is a normal `404`.
+  - `EndpointProtectionTests` enumerates every mapped endpoint. Each must be either anonymous or
+    carry authorization metadata, **and** the anonymous ones must match an explicit allow-list
+    in the test. Under a fallback policy the real leak is an `AllowAnonymous()` inherited from a
+    group (a new route inside `/api/auth`), and only the allow-list catches that. Making an
+    endpoint public means editing that list.
+- The framework's own `401` (no/invalid/expired token) and `403` (policy failed) are
+  ProblemDetails with `type` `…/errors/auth.unauthenticated` and `…/errors/auth.forbidden`
+  (`CustomizeProblemDetails`). The body is generic; the reason is in JwtBearer's standard
+  `WWW-Authenticate` header (`error="invalid_token"`). A `401` an endpoint returns on purpose
+  keeps its own type (e.g. `auth.invalid_refresh_token`).
+- `ICurrentUser` (Infrastructure `CurrentUser`, scoped, over `IHttpContextAccessor`) reads the
+  `sub` claim. `UserId` is null and `IsAuthenticated` false for an anonymous request, outside a
+  request (background jobs), or if `sub` is not a Guid. The two properties never disagree.
 - Webhooks are anonymous to ASP.NET but authenticated by HMAC signature — see
   [`webhooks-spec.md`](webhooks-spec.md).
 - Rate limits: `POST /api/auth/login` and `/register` 10 requests/minute/IP, plus a per-account

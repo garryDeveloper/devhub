@@ -225,7 +225,9 @@ Rules:
   calls each module's `Map<Feature>Endpoints()`. A new module is one new line there. No assembly
   scanning: an unlisted module fails visibly (its routes 404) instead of silently.
 - **Group-level defaults live on the `/api` group:** `RequireAuthorization()` (secure by default;
-  anonymous endpoints opt out with `AllowAnonymous()`) and the ProblemDetails responses every
+  anonymous endpoints opt out with `AllowAnonymous()`; a global fallback policy backs it up for
+  anything mapped outside the group, and `EndpointProtectionTests` holds the allow-list of
+  anonymous routes — auth-spec.md §6) and the ProblemDetails responses every
   endpoint can return (`ProducesProblem(400/401/404/500)`).
 - **Each module creates its own sub-group** (`api.MapGroup("/projects/{projectId:guid}/issues")`)
   and applies what is specific to it: `WithTags`, rate-limit policy, extra `ProducesProblem`.

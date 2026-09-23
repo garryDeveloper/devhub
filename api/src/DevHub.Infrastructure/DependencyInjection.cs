@@ -49,7 +49,7 @@ public static class DependencyInjection
 
     /// <summary>
     /// Token issuing, token validation and login lockout (DEVHUB-014/015), refresh token
-    /// cleanup (DEVHUB-016).
+    /// cleanup (DEVHUB-016), the current user (DEVHUB-018).
     /// </summary>
     private static void AddIdentity(this IServiceCollection services)
     {
@@ -63,6 +63,11 @@ public static class DependencyInjection
         // hosted-service registration forwards to that same singleton instance.
         services.AddSingleton<RefreshTokenCleanupService>();
         services.AddHostedService(provider => provider.GetRequiredService<RefreshTokenCleanupService>());
+
+        // Scoped: it answers for one request. Handlers get the caller from here, never from a
+        // workspaceId or userId in the request body (auth-spec.md §5).
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUser, CurrentUser>();
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
 

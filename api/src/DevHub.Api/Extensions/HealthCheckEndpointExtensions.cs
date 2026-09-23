@@ -37,6 +37,9 @@ public static class HealthCheckEndpointExtensions
                 version = Version,
                 durationMs = (int)report.TotalDuration.TotalMilliseconds,
             }),
-        });
+        })
+        // Outside the /api group, so without this the fallback policy (DEVHUB-018) would demand a
+        // token from the load balancer. Public on purpose; it reveals only status and version.
+        .AllowAnonymous();
     }
 }

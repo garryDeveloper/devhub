@@ -12,7 +12,10 @@ namespace DevHub.Api.Extensions;
 /// </summary>
 public static class ErrorResultExtensions
 {
-    public const string ValidationProblemType = "https://devhub.dev/errors/validation";
+    /// <summary>Every DevHub problem <c>type</c> is this plus the error code.</summary>
+    public const string ProblemTypeBase = "https://devhub.dev/errors/";
+
+    public const string ValidationProblemType = ProblemTypeBase + "validation";
 
     /// <param name="httpContext">
     /// Needed only for <c>Retry-After</c>: a <see cref="ProblemHttpResult"/> writes a body, not
@@ -65,6 +68,6 @@ public static class ErrorResultExtensions
             title: title,
             // A stable URI per error code, so a client can branch on "auth.email_taken" without
             // parsing the human-readable detail.
-            type: $"https://devhub.dev/errors/{error.Code}");
+            type: ProblemTypeBase + error.Code);
     }
 }

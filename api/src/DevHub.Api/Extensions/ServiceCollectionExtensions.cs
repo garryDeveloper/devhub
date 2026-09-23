@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Threading.RateLimiting;
 using DevHub.Api.Configuration;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 
@@ -26,17 +27,62 @@ public static class ServiceCollectionExtensions
         // RFC 7807 bodies for everything the endpoints do not produce themselves: unhandled
         // exceptions (UseExceptionHandler) and bare status codes such as JwtBearer's 401
         // challenge (UseStatusCodePages). Never a stack trace, in any environment.
-        services.AddProblemDetails();
+        services.AddProblemDetails(options => options.CustomizeProblemDetails = UseDevHubAuthProblemTypes);
 
         // The authentication scheme itself (JwtBearer) is registered by AddInfrastructure(),
         // next to the signing options it shares with the token issuer.
-        services.AddAuthorization();
+        services.AddAuthorization(options =>
+        {
+            // Fail closed (DEVHUB-018): any endpoint with no authorization metadata of its own —
+            // including one mapped outside the /api group, which never gets its
+            // RequireAuthorization() — requires an authenticated user. Forgetting to mark an
+            // endpoint breaks a public one; it never opens a private one.
+            // It also applies when no endpoint matched at all, so an anonymous request for an
+            // unknown route gets 401, not 404: routes are not discoverable without a token.
+            options.FallbackPolicy = new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .Build();
+        });
 
         // No checks registered yet, so this only answers "is the process alive". The database
         // and storage checks, and the /health/live and /health/ready split, are DEVHUB-110.
         services.AddHealthChecks();
 
         return services;
+    }
+
+    /// <summary>
+    /// Gives the framework's own 401 and 403 — a missing or invalid token, a failed policy — a
+    /// DevHub <c>type</c> (api-conventions.md §4), so a client can branch on it like any other error.
+    /// </summary>
+    /// <remarks>
+    /// Runs for every ProblemDetails written, so it only rewrites the ones that still carry the
+    /// framework's default RFC 9110 type. A 401 an endpoint returned on purpose, such as
+    /// <c>auth.invalid_refresh_token</c>, already has a DevHub type and is left alone.
+    /// The <c>WWW-Authenticate</c> header JwtBearer sets (e.g. <c>error="invalid_token"</c>) is
+    /// untouched: it is the standard place for the reason, and the body stays generic.
+    /// </remarks>
+    private static void UseDevHubAuthProblemTypes(ProblemDetailsContext context)
+    {
+        var problem = context.ProblemDetails;
+        if (problem.Type?.StartsWith(ErrorResultExtensions.ProblemTypeBase, StringComparison.Ordinal) == true)
+        {
+            return;
+        }
+
+        switch (problem.Status)
+        {
+            case StatusCodes.Status401Unauthorized:
+                problem.Type = ErrorResultExtensions.ProblemTypeBase + "auth.unauthenticated";
+                problem.Title = "Authentication required.";
+                problem.Detail = "A valid access token is required.";
+                break;
+            case StatusCodes.Status403Forbidden:
+                problem.Type = ErrorResultExtensions.ProblemTypeBase + "auth.forbidden";
+                problem.Title = "Forbidden.";
+                problem.Detail = "You do not have permission to perform this action.";
+                break;
+        }
     }
 
     private static void AddApiCors(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)

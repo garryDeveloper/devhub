@@ -77,6 +77,9 @@ Every error response:
 - Domain rule violations use `422` with a stable `type` URI, e.g.
   `https://devhub.dev/errors/invalid-status-transition`.
 - Never return exception messages, SQL, or stack traces.
+- Authentication and authorization failures produced by the framework use
+  `https://devhub.dev/errors/auth.unauthenticated` (`401`) and
+  `https://devhub.dev/errors/auth.forbidden` (`403`) — see auth-spec.md §6.
 
 ## 5. Pagination
 
