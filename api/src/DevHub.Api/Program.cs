@@ -1,3 +1,4 @@
+using DevHub.Api.Endpoints;
 using DevHub.Api.Extensions;
 using DevHub.Application;
 using DevHub.Infrastructure;
@@ -43,7 +44,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapApiHealthChecks();
-app.MapControllers();
+app.MapApiEndpoints();
 
 app.Run();
 

@@ -83,9 +83,9 @@ public class DevHubApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         {
             services.AddSingleton<ITimeProvider>(Clock);
 
-            // Adds ProtectedTestController: DevHub has no authenticated endpoint yet (GET
-            // /api/me is DEVHUB-019), and "a token is accepted by a protected endpoint" needs one.
-            services.AddControllers().AddApplicationPart(typeof(DevHubApiFactory).Assembly);
+            // Adds GET /api/test/whoami: DevHub has no authenticated endpoint yet (GET /api/me is
+            // DEVHUB-019), and "a token is accepted by a protected endpoint" needs one.
+            services.AddTransient<IStartupFilter, ProtectedTestEndpoint>();
         });
     }
 }

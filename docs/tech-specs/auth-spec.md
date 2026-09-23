@@ -118,7 +118,7 @@ record WorkspaceAccess(Guid WorkspaceId, Guid ProjectId, string Role);
 Anti-patterns to avoid:
 
 - ❌ Trusting `workspaceId` from the request body — always derive it from the resource.
-- ❌ Checking authorization only in the controller — handlers can be reached from jobs and tests.
+- ❌ Checking authorization only in the endpoint — handlers can be reached from jobs and tests.
 - ❌ Returning `403` for a non-member — it confirms the resource exists.
 
 ---

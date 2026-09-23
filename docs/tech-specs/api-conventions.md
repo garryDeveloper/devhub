@@ -165,5 +165,6 @@ is ever needed:
 ## 12. OpenAPI
 
 Swagger is enabled in Development and Staging, disabled in Production. Every endpoint declares
-`[ProducesResponseType]` for each documented status code, and DTOs carry XML doc comments —
+its responses — a typed `Results<…>` return for success, `ProducesProblem(...)` for each
+documented error status (backend-architecture.md §5.1) — and DTOs carry XML doc comments —
 the generated spec is part of the deliverable, not an afterthought.

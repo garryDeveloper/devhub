@@ -1,50 +1,51 @@
 using System.Globalization;
 using System.Text.Json;
 using DevHub.Application.Common;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace DevHub.Api.Extensions;
 
 /// <summary>
 /// Turns an Application <see cref="Error"/> into the RFC 7807 response of api-conventions.md §4.
-/// The one place an <see cref="ErrorType"/> becomes a status code, so every controller agrees.
+/// The one place an <see cref="ErrorType"/> becomes a status code, so every endpoint agrees.
 /// </summary>
 public static class ErrorResultExtensions
 {
     public const string ValidationProblemType = "https://devhub.dev/errors/validation";
 
-    public static IActionResult ToProblem(this ControllerBase controller, Error error)
+    /// <param name="httpContext">
+    /// Needed only for <c>Retry-After</c>: a <see cref="ProblemHttpResult"/> writes a body, not
+    /// headers, so the header goes on the response before the result executes.
+    /// </param>
+    public static ProblemHttpResult ToProblem(this Error error, HttpContext httpContext)
     {
-        ArgumentNullException.ThrowIfNull(controller);
         ArgumentNullException.ThrowIfNull(error);
+        ArgumentNullException.ThrowIfNull(httpContext);
 
         if (error is { Type: ErrorType.Validation, FieldErrors: { } fieldErrors })
         {
-            var modelState = new ModelStateDictionary();
+            // The validator reports C# property names ("Password"); the client sent JSON ones
+            // ("password"). errors.password is what the client can map back to a field.
+            var errors = fieldErrors.ToDictionary(
+                entry => JsonNamingPolicy.CamelCase.ConvertName(entry.Key),
+                entry => entry.Value);
 
-            foreach (var (field, messages) in fieldErrors)
+            // HttpValidationProblemDetails is a ProblemDetails with an "errors" member; the
+            // ProblemDetails writer serializes the runtime type, so "errors" reaches the wire.
+            return TypedResults.Problem(new HttpValidationProblemDetails(errors)
             {
-                // The validator reports C# property names ("Password"); the client sent JSON
-                // ones ("password"). errors.password is what the client can map back to a field.
-                var key = JsonNamingPolicy.CamelCase.ConvertName(field);
-
-                foreach (var message in messages)
-                {
-                    modelState.AddModelError(key, message);
-                }
-            }
-
-            return controller.ValidationProblem(
-                detail: "See the errors property.",
-                type: ValidationProblemType,
-                modelStateDictionary: modelState);
+                Status = StatusCodes.Status400BadRequest,
+                Title = "One or more validation errors occurred.",
+                Detail = "See the errors property.",
+                Type = ValidationProblemType,
+            });
         }
 
         if (error.RetryAfter is { } retryAfter)
         {
             // Whole seconds, rounded up: rounding down would invite a retry that is refused again.
-            controller.Response.Headers.RetryAfter =
+            httpContext.Response.Headers.RetryAfter =
                 ((int)Math.Ceiling(retryAfter.TotalSeconds)).ToString(CultureInfo.InvariantCulture);
         }
 
@@ -58,7 +59,7 @@ public static class ErrorResultExtensions
             _ => throw new NotSupportedException($"Unhandled {nameof(ErrorType)}: {error.Type}."),
         };
 
-        return controller.Problem(
+        return TypedResults.Problem(
             detail: error.Message,
             statusCode: status,
             title: title,

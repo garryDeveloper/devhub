@@ -101,7 +101,9 @@ message brokers other than SQS) without an explicit decision recorded in a ticke
 
 - `DevHub.Domain` must **not** reference EF Core, ASP.NET, AWS SDK or any external package.
   Entities enforce their own invariants; no public setters on aggregate state.
-- Controllers are thin: validate route/model binding, dispatch a command/query, map to DTO.
+- Endpoints (Minimal APIs) are thin: validate route/model binding, dispatch a command/query, map to DTO.
+  One module per feature under `DevHub.Api/Endpoints/`, listed in `ApiEndpoints.cs`
+  (see backend-architecture.md §5.1).
 - Business rules live in the domain; orchestration lives in Application handlers.
 - Every write that changes user-visible state must raise the domain event that produces the
   `issue_activities` row (see [`docs/tech-specs/backend-architecture.md`](docs/tech-specs/backend-architecture.md)).
@@ -149,7 +151,7 @@ message brokers other than SQS) without an explicit decision recorded in a ticke
 - Local secrets go in .NET user-secrets / `.env.local` (git-ignored).
 - AWS access from CI uses **OIDC + assumed role**, never long-lived access keys.
 - Every endpoint declares its authorization requirement explicitly. Workspace/project scoping
-  is checked in the Application layer, not only in the controller.
+  is checked in the Application layer, not only in the endpoint.
 
 ---
 

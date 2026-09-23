@@ -21,7 +21,7 @@ checked. Every ticket references this file instead of repeating it.
 - [ ] Domain rules live in `DevHub.Domain`; no EF Core / ASP.NET / AWS types leak into it.
 - [ ] Request validation implemented (FluentValidation or explicit) with per-field errors.
 - [ ] Authorization verified: the caller's workspace/project membership is checked in the
-      application layer, not only in the controller.
+      application layer, not only in the endpoint.
 - [ ] Resources the caller may not see return `404`, not `403`.
 - [ ] Error cases return RFC 7807 `ProblemDetails` with the right status code.
 - [ ] Unit tests cover the business rules and at least one failure path.

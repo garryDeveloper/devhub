@@ -1,14 +1,14 @@
 using System.Globalization;
 using System.Threading.RateLimiting;
 using DevHub.Api.Configuration;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 
 namespace DevHub.Api.Extensions;
 
 /// <summary>
-/// Everything DevHub.Api itself registers: controllers, CORS, Swagger and health checks.
+/// Everything DevHub.Api itself registers: CORS, Swagger, rate limiting and health checks.
+/// Endpoints are mapped rather than registered; see Endpoints/ApiEndpoints.cs.
 /// The Application and Infrastructure layers register their own services; this is the API's
 /// share, kept out of Program.cs so the composition root stays readable (DEVHUB-002).
 /// </summary>
@@ -19,12 +19,11 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration,
         IHostEnvironment environment)
     {
-        services.AddApiControllers();
         services.AddApiCors(configuration, environment);
         services.AddApiSwagger();
         services.AddApiRateLimiting(configuration);
 
-        // RFC 7807 bodies for everything the controllers do not produce themselves: unhandled
+        // RFC 7807 bodies for everything the endpoints do not produce themselves: unhandled
         // exceptions (UseExceptionHandler) and bare status codes such as JwtBearer's 401
         // challenge (UseStatusCodePages). Never a stack trace, in any environment.
         services.AddProblemDetails();
@@ -38,29 +37,6 @@ public static class ServiceCollectionExtensions
         services.AddHealthChecks();
 
         return services;
-    }
-
-    private static void AddApiControllers(this IServiceCollection services)
-    {
-        services.AddControllers(options =>
-        {
-            // Without this, [ApiController] treats every non-nullable string on a request body
-            // as [Required] and rejects a missing field before FluentValidation runs, with
-            // PascalCase keys and different wording. One validator per command is the single
-            // source of input rules (backend-architecture.md §9), so MVC stays out of it.
-            options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
-
-            options.Conventions.Add(new RoutePrefixConvention("api"));
-
-            // Every endpoint can fail these three ways and every error is an RFC 7807
-            // ProblemDetails (docs/tech-specs/api-conventions.md), so declare it once here
-            // instead of on every action. Actions still declare their own success type:
-            // [ProducesResponseType<IssueDto>(StatusCodes.Status200OK)].
-            // EPIC 2 adds 401 and 403 to this list once authentication exists.
-            options.Filters.Add(new ProducesResponseTypeAttribute(typeof(ProblemDetails), StatusCodes.Status400BadRequest));
-            options.Filters.Add(new ProducesResponseTypeAttribute(typeof(ProblemDetails), StatusCodes.Status404NotFound));
-            options.Filters.Add(new ProducesResponseTypeAttribute(typeof(ProblemDetails), StatusCodes.Status500InternalServerError));
-        });
     }
 
     private static void AddApiCors(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)

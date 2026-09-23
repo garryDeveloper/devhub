@@ -161,6 +161,21 @@ public sealed class RegisterTests(DevHubApiFactory api) : IClassFixture<DevHubAp
         Assert.True(errors.TryGetProperty("displayName", out _));
     }
 
+    /// <summary>
+    /// Minimal APIs reject an unreadable body before the endpoint runs, with a bare 400 and no
+    /// body; UseStatusCodePages is what turns it into a ProblemDetails. This pins that down.
+    /// </summary>
+    [Fact]
+    public async Task Malformed_json_returns_400_problem_details()
+    {
+        using var content = new StringContent("{ \"email\": ", Encoding.UTF8, "application/json");
+
+        var response = await _client.PostAsync("/api/auth/register", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+    }
+
     private static async Task<JsonElement> AssertValidationProblemAsync(HttpResponseMessage response)
     {
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);

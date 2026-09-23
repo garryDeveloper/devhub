@@ -1592,7 +1592,7 @@ Use a modular monolith rather than microservices.
 ┌─────────────────────────────────────────────┐
 │                ASP.NET Core API             │
 ├─────────────────────────────────────────────┤
-│ API / Controllers                           │
+│ API / Endpoints (Minimal APIs)             │
 ├─────────────────────────────────────────────┤
 │ Application                                 │
 │                                             │
@@ -1639,7 +1639,7 @@ Suggested structure:
 ```text
 src/
 ├── DevHub.Api/
-│   ├── Controllers/
+│   ├── Endpoints/
 │   ├── Middleware/
 │   ├── Filters/
 │   └── Configuration/
@@ -1838,7 +1838,7 @@ Normal command:
 ```text
 HTTP Request
     ↓
-Controller
+Endpoint
     ↓
 Application Command
     ↓
@@ -1862,7 +1862,7 @@ Example:
 ```text
 PATCH /api/issues/123/status
 
-Controller
+Endpoint
     ↓
 ChangeIssueStatusCommand
     ↓

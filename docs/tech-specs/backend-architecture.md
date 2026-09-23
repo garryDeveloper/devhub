@@ -19,7 +19,7 @@ boundaries are already there.
 ```text
 ┌──────────────────────────────────────────────┐
 │ DevHub.Api                                   │
-│ Controllers · Middleware · Filters · Auth    │
+│ Endpoints · Middleware · Filters · Auth      │
 ├──────────────────────────────────────────────┤
 │ DevHub.Application                           │
 │ Commands · Queries · Handlers · Validators   │
@@ -45,7 +45,7 @@ Infrastructure → Application + Domain
 `DevHub.Domain`, the design is wrong.
 
 `Api` references `Infrastructure` **only** in `Program.cs` for dependency-injection wiring.
-Controllers never reference `DbContext`.
+Endpoints never reference `DbContext`.
 
 Enforce it with a test (`ArchitectureTests`) using NetArchTest or a simple reflection assertion,
 so the rule is checked by CI, not by discipline.
@@ -60,7 +60,7 @@ api/
 ├── Dockerfile
 ├── src/
 │   ├── DevHub.Api/
-│   │   ├── Controllers/
+│   │   ├── Endpoints/           # Minimal API modules, one folder per feature (§5.1)
 │   │   ├── Middleware/          # correlation id, exception handling
 │   │   ├── Filters/
 │   │   ├── Extensions/          # API-only helpers (ProblemDetails mapping, results)
@@ -137,7 +137,7 @@ Not full CQRS — one database, no event sourcing. But commands and queries are 
 - **Queries** bypass repositories and project directly from `DbContext` with `AsNoTracking()`
   and `.Select(...)` into a DTO. Never load a whole aggregate just to read one field.
 
-**Decision (DEVHUB-002): plain handler classes, no MediatR.** Controllers inject the exact
+**Decision (DEVHUB-002): plain handler classes, no MediatR.** Endpoint methods inject the exact
 handler interface they need and call it:
 
 ```csharp
@@ -170,7 +170,7 @@ Request → Logging → Validation → Authorization → Transaction → Handler
 ```text
 HTTP request
    ↓ model binding + route constraints
-Controller
+Endpoint (Minimal API)
    ↓ dispatch
 Command / Query
    ↓ validator (FluentValidation) → 400 ProblemDetails on failure
@@ -190,7 +190,7 @@ HTTP response
 Worked example — `PATCH /api/issues/{id}/status`:
 
 ```text
-IssuesController.ChangeStatus
+IssueEndpoints.ChangeStatusAsync
    ↓
 ChangeIssueStatusCommand(IssueId, NewStatus)
    ↓
@@ -205,6 +205,43 @@ ChangeIssueStatusHandler
    ↓
 IssueDto
 ```
+
+### 5.1 Organizing endpoints (Minimal APIs)
+
+**Decision: Minimal APIs, not MVC controllers, organized as one static module per feature
+and registered explicitly.** Controllers were used until the first auth endpoints; they were
+replaced before the API grew.
+
+```text
+DevHub.Api/Endpoints/
+├── ApiEndpoints.cs              # MapApiEndpoints(): the /api group + one line per module
+├── Auth/AuthEndpoints.cs        # MapAuthEndpoints(this IEndpointRouteBuilder api)
+└── Issues/IssueEndpoints.cs     # MapIssueEndpoints(...)
+```
+
+Rules:
+
+- **`ApiEndpoints.MapApiEndpoints()` is the index of the API.** It creates the `/api` group and
+  calls each module's `Map<Feature>Endpoints()`. A new module is one new line there. No assembly
+  scanning: an unlisted module fails visibly (its routes 404) instead of silently.
+- **Group-level defaults live on the `/api` group:** `RequireAuthorization()` (secure by default;
+  anonymous endpoints opt out with `AllowAnonymous()`) and the ProblemDetails responses every
+  endpoint can return (`ProducesProblem(400/401/404/500)`).
+- **Each module creates its own sub-group** (`api.MapGroup("/projects/{projectId:guid}/issues")`)
+  and applies what is specific to it: `WithTags`, rate-limit policy, extra `ProducesProblem`.
+- **Handlers are named private static methods, not inline lambdas**, returning
+  `Results<Ok<TDto>, ProblemHttpResult>` (or `Created<…>`, `NoContent`, …). The typed result is
+  what OpenAPI reads the success schema from, so no `[ProducesResponseType]` is needed.
+- **Endpoints stay thin:** bind, call the handler interface, map `Result` with
+  `Error.ToProblem(httpContext)` (`Extensions/ErrorResultExtensions.cs`). Workspace/project
+  scoping is checked in the Application handler; an endpoint filter may add a check, never
+  replace it.
+- **Input validation is FluentValidation only.** Minimal APIs do not run implicit model
+  validation, so nothing competes with the validators. An unreadable body is rejected by the
+  framework with a bare 400, which `UseStatusCodePages` turns into ProblemDetails.
+
+Test-only endpoints (e.g. `GET /api/test/whoami`) are added by the integration-test harness
+through an `IStartupFilter`, never in `DevHub.Api`.
 
 ---
 
