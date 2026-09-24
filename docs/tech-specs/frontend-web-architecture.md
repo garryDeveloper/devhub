@@ -78,17 +78,26 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     headers: { 'Content-Type': 'application/json', ...authHeader(), ...init?.headers },
   });
 
-  if (res.status === 401 && !isRefreshRequest(path)) {
-    await refreshTokenOnce();          // single-flight; queues concurrent 401s
-    return apiFetch<T>(path, init);    // retried exactly once
+  if (res.status === 401 && !isRetry && !isAuthEndpoint(path)) {
+    if (getAccessToken() === tokenUsed) await refreshTokenOnce();  // single-flight
+    return send<T>(path, init, /* isRetry */ true);                // retried exactly once
   }
   if (!res.ok) throw await toApiError(res);   // parses ProblemDetails
   return res.status === 204 ? (undefined as T) : res.json();
 }
 ```
 
-- `refreshTokenOnce()` is **single-flight**: concurrent 401s wait on one refresh promise.
-- A failed refresh clears auth state and redirects to `/login?returnTo=…`.
+- `refreshTokenOnce()` is **single-flight**: concurrent 401s wait on one refresh promise. It is
+  the only way to refresh, and the `AuthProvider` bootstrap uses it too (DEVHUB-021).
+- Every `/api/auth/*` path bypasses the interceptor: a 401 from `/login` means bad credentials,
+  and a 401 from `/refresh` must not recurse.
+- If the access token changed while the request was on the wire, another request already
+  refreshed, so the request is retried with the new token and no second refresh starts.
+- A refresh rejected with **401** clears both tokens and calls the handler registered with
+  `setSessionExpiredHandler`. `AuthProvider` then clears the query cache and the user, and
+  `RequireAuth` redirects to `/login?expired=1&returnTo=…`, where `LoginPage` shows a
+  "session expired" notice. A network error or 5xx on refresh keeps the session: the original
+  request fails with that error, and the user is not logged out.
 - `ApiError` carries `status`, `title`, `detail`, `errors` (field → messages) so forms can map
   server validation onto fields.
 

@@ -1,5 +1,5 @@
 import { apiFetch } from '../../../shared/api/client';
-import type { AuthResponse, AuthUser, RefreshResponse } from '../types';
+import type { AuthResponse, AuthUser } from '../types';
 
 export function registerRequest(
   email: string,
@@ -22,12 +22,8 @@ export function loginRequest(
   });
 }
 
-export function refreshRequest(refreshToken: string): Promise<RefreshResponse> {
-  return apiFetch<RefreshResponse>('/api/auth/refresh', {
-    method: 'POST',
-    body: JSON.stringify({ refreshToken }),
-  });
-}
+// POST /api/auth/refresh deliberately has no wrapper here: the only way to refresh is
+// refreshTokenOnce() in shared/api/client.ts, so every caller shares one single-flight promise.
 
 // Always resolves to 204 (auth-spec.md §4) — callers do not need to handle a failure case.
 export function logoutRequest(refreshToken: string | null): Promise<void> {

@@ -16,9 +16,4 @@ export interface AuthResponse {
   user: AuthUser;
 }
 
-// Mirrors RefreshResponse — POST /api/auth/refresh (200).
-export interface RefreshResponse {
-  accessToken: string;
-  expiresIn: number;
-  refreshToken: string;
-}
+// RefreshResponse (POST /api/auth/refresh) is mirrored in shared/api/client.ts, the only caller.

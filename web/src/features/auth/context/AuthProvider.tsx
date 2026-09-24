@@ -3,6 +3,10 @@ import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { setAccessToken } from '../../../shared/api/authToken';
 import {
+  refreshTokenOnce,
+  setSessionExpiredHandler,
+} from '../../../shared/api/client';
+import {
   clearStoredRefreshToken,
   getStoredRefreshToken,
   setStoredRefreshToken,
@@ -11,7 +15,6 @@ import {
   fetchMe,
   loginRequest,
   logoutRequest,
-  refreshRequest,
   registerRequest,
 } from '../api/authApi';
 import { AuthSplash } from '../components/AuthSplash';
@@ -21,7 +24,21 @@ import { AuthContext } from './authContext';
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const queryClient = useQueryClient();
+
+  // A refresh rejected with 401 (DEVHUB-021) has already cleared both tokens in the client; this
+  // clears the React side. No POST /logout: the family is already dead. No navigate() either —
+  // this provider sits outside the router, and RequireAuth redirects as soon as `user` is null,
+  // reading `sessionExpired` to add `expired=1`.
+  useEffect(() => {
+    setSessionExpiredHandler(() => {
+      queryClient.clear();
+      setUser(null);
+      setSessionExpired(true);
+    });
+    return () => setSessionExpiredHandler(null);
+  }, [queryClient]);
 
   // Bootstrap once on mount: turn a stored refresh token into a live session before anything
   // behind this provider renders (frontend-web-architecture.md §7).
@@ -35,15 +52,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      // Same single-flight refresh as apiFetch: under StrictMode this effect runs twice, and two
+      // parallel refreshes with one token would trip reuse detection and kill the session.
+      // A 401 clears the tokens inside refreshTokenOnce; a network error keeps the stored token
+      // so a reload can recover once the API is back.
       try {
-        const refreshed = await refreshRequest(storedRefreshToken);
-        setAccessToken(refreshed.accessToken);
-        setStoredRefreshToken(refreshed.refreshToken);
+        await refreshTokenOnce();
         const me = await fetchMe();
         if (!cancelled) setUser(me);
       } catch {
         setAccessToken(null);
-        clearStoredRefreshToken();
       } finally {
         if (!cancelled) setIsBootstrapping(false);
       }
@@ -59,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response = await loginRequest(email, password);
     setAccessToken(response.accessToken);
     setStoredRefreshToken(response.refreshToken);
+    setSessionExpired(false);
     setUser(response.user);
   }, []);
 
@@ -67,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await registerRequest(email, password, displayName);
       setAccessToken(response.accessToken);
       setStoredRefreshToken(response.refreshToken);
+      setSessionExpired(false);
       setUser(response.user);
     },
     [],
@@ -86,12 +106,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(null);
     clearStoredRefreshToken();
     queryClient.clear();
+    setSessionExpired(false);
     setUser(null);
   }, [queryClient]);
 
   const value = useMemo(
-    () => ({ user, isBootstrapping, login, register, logout }),
-    [user, isBootstrapping, login, register, logout],
+    () => ({ user, isBootstrapping, sessionExpired, login, register, logout }),
+    [user, isBootstrapping, sessionExpired, login, register, logout],
   );
 
   if (isBootstrapping) {

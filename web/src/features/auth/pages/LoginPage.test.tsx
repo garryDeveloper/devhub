@@ -15,6 +15,7 @@ function renderLoginPage(
   const value: AuthContextValue = {
     user: null,
     isBootstrapping: false,
+    sessionExpired: false,
     login: vi.fn(),
     register: vi.fn(),
     logout: vi.fn(),
@@ -87,5 +88,19 @@ describe('LoginPage', () => {
 
     expect(await screen.findByText('Invalid email or password.')).toBeInTheDocument();
     expect(emailInput).toHaveValue('dario@example.com');
+  });
+
+  it('explains the redirect when the session expired', () => {
+    renderLoginPage({}, '/login?expired=1&returnTo=%2Fp%2FDEV%2Fissues');
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Your session expired. Please log in again.',
+    );
+  });
+
+  it('shows no session-expired message on a normal visit', () => {
+    renderLoginPage({}, '/login');
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 });

@@ -7,5 +7,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    // Fixed base URL so MSW handlers match regardless of a developer's .env.local (and CI has none).
+    env: { VITE_API_URL: 'http://api.test' },
   },
 });

@@ -13,6 +13,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [formError, setFormError] = useState<string | null>(null);
+  const sessionExpired = searchParams.get('expired') === '1';
 
   const {
     register,
@@ -37,6 +38,16 @@ export function LoginPage() {
   return (
     <form className="space-y-4" onSubmit={onSubmit} noValidate>
       <h1 className="text-lg font-semibold text-slate-900">Log in</h1>
+
+      {/* Informational, not an error: the user did nothing wrong (DEVHUB-021). */}
+      {sessionExpired && !formError && (
+        <p
+          role="status"
+          className="rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-600"
+        >
+          Your session expired. Please log in again.
+        </p>
+      )}
 
       {formError && (
         <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
