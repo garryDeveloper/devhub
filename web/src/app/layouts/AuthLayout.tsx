@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom';
 
 // Bare centered layout for /login, /register, /forgot-password. No sidebar,
-// no auth check — RequireAuth guards land in DEVHUB-020.
+// no auth check — these routes are public by design.
 export function AuthLayout() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">

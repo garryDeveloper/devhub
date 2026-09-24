@@ -1,5 +1,8 @@
 // One place for HTTP calls: base URL, headers and RFC 7807 error normalization.
-// Auth headers and refresh-on-401 are added in DEVHUB-021.
+// Authenticated requests carry the in-memory access token (DEVHUB-020). Refresh-on-401
+// interception (single-flight retry) is added in DEVHUB-021 — this client does not retry yet.
+
+import { getAccessToken } from './authToken';
 
 export interface ProblemDetails {
   type?: string;
@@ -27,6 +30,11 @@ export class ApiError extends Error {
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+function authHeader(): Record<string, string> {
+  const token = getAccessToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function toApiError(res: Response): Promise<ApiError> {
   try {
     const body = (await res.json()) as Partial<ProblemDetails>;
@@ -53,6 +61,7 @@ export async function apiFetch<T>(
     ...init,
     headers: {
       'Content-Type': 'application/json',
+      ...authHeader(),
       ...init?.headers,
     },
   });

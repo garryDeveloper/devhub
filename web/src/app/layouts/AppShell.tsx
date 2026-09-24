@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../features/auth/hooks/useAuth';
 import { Drawer } from '../../shared/components/Drawer';
 import { cn } from '../../shared/lib/cn';
 
@@ -9,8 +10,8 @@ interface NavItem {
   icon: string;
 }
 
-// A fixed demo workspace/project until DEVHUB-020 (auth) and the workspace
-// feature exist to supply a real one. The shell does not fetch this.
+// A fixed demo workspace/project until the workspace feature exists to supply
+// a real one (DEVHUB-024). The shell does not fetch this.
 const primaryNav: NavItem[] = [
   { to: '/', label: 'Overview', icon: '⌂' },
   { to: '/w/demo/projects', label: 'Projects', icon: '▣' },
@@ -71,6 +72,15 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 // sidebar stays mounted (docs/tickets DEVHUB-008 acceptance criteria).
 export function AppShell() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    await logout();
+    // History replaced so back-navigation cannot land on protected content
+    // (DEVHUB-020 acceptance criteria) — RequireAuth would redirect again anyway.
+    navigate('/login', { replace: true });
+  }
 
   return (
     <div className="flex h-screen flex-col bg-white">
@@ -86,11 +96,21 @@ export function AppShell() {
         <span className="text-sm font-semibold tracking-wide text-slate-900">
           DEVHUB
         </span>
-        <div className="ml-auto flex items-center gap-2 text-sm text-slate-400">
+        <div className="ml-auto flex items-center gap-3 text-sm text-slate-400">
           <span className="hidden sm:inline">Search</span>
           <kbd className="rounded border border-slate-300 px-1.5 py-0.5 text-xs">
             ⌘K
           </kbd>
+          <span className="hidden text-slate-600 sm:inline">
+            {user?.displayName}
+          </span>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="rounded-md px-2 py-1 text-slate-600 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
+          >
+            Log out
+          </button>
         </div>
       </header>
 

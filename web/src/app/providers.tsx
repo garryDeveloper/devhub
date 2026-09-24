@@ -1,9 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
+import { AuthProvider } from '../features/auth/context/AuthProvider';
 import { ToastProvider } from '../shared/components/Toast';
 
 // Defaults per docs/tech-specs/frontend-web-architecture.md §4.
-// AuthProvider is added in DEVHUB-020 — this shell has no auth state yet.
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -14,10 +14,14 @@ const queryClient = new QueryClient({
   },
 });
 
+// AuthProvider sits inside QueryClientProvider: logout needs useQueryClient() to clear the
+// cache (auth-spec.md §4 "Client contract").
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>{children}</ToastProvider>
+      <ToastProvider>
+        <AuthProvider>{children}</AuthProvider>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }
