@@ -1,9 +1,11 @@
 using System.Globalization;
 using System.Threading.RateLimiting;
 using DevHub.Api.Configuration;
+using DevHub.Api.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace DevHub.Api.Extensions;
 
@@ -21,6 +23,11 @@ public static class ServiceCollectionExtensions
         IHostEnvironment environment)
     {
         services.AddApiCors(configuration, environment);
+
+        // Absent-vs-null for every PATCH body (DEVHUB-019).
+        services.ConfigureHttpJsonOptions(options =>
+            options.SerializerOptions.Converters.Add(new OptionalJsonConverterFactory()));
+
         services.AddApiSwagger();
         services.AddApiRateLimiting(configuration);
 
@@ -193,5 +200,11 @@ public static class ServiceCollectionExtensions
                 Description = "The DevHub API is the backend for the DevHub application.",
             });
         });
+
+        // Registered after AddSwaggerGen, whose own registration is a TryAdd: the last one wins.
+        // Built over the same HTTP JSON options the endpoints use, as Swashbuckle's default is.
+        services.AddTransient<ISerializerDataContractResolver>(provider =>
+            new OptionalAwareDataContractResolver(new JsonSerializerDataContractResolver(
+                provider.GetRequiredService<IOptions<Microsoft.AspNetCore.Http.Json.JsonOptions>>().Value.SerializerOptions)));
     }
 }

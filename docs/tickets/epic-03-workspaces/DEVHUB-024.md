@@ -29,6 +29,8 @@ are a member of") is applied.
 - [ ] `PATCH /{id}` (name only) requires the `Owner` role → `403` for a member.
 - [ ] Integration tests: list isolation between two users, 404 for a non-member, 403 for a
       member calling PATCH, 409 on duplicate slug.
+- [ ] Fill `MeDto.Workspaces` in `GetMeHandler` (id, name, slug, role). DEVHUB-019 shipped the
+      field as an always-empty array so the clients consume the final contract.
 
 ## Acceptance criteria
 

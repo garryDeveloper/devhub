@@ -30,6 +30,10 @@ straight to S3.
 - [ ] `POST /api/attachments/{id}/complete`: `HeadObject` to verify, compare the real size,
       flip to `Ready`, record activity, return the DTO.
 - [ ] `409` when the object is missing; `413`/`400` for size and type failures.
+- [ ] Wire `PATCH /api/me { avatarAttachmentId }`: `UpdateMeHandler` answers `404
+      attachments.not_found` for every id until now (DEVHUB-019). Replace it with the lookup (the
+      attachment exists, is `Ready`, and was uploaded by this user under `avatars/{userId}/`), and
+      set `AvatarKey` from it.
 - [ ] Tests: disallowed MIME, oversize, client-supplied key ignored, complete without upload,
       cross-workspace target → 404, path traversal in the file name neutralized.
 

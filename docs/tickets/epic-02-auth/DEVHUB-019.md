@@ -22,26 +22,34 @@ response.
 
 ## Tasks
 
-- [ ] `GET /api/me` returning the user DTO plus their workspaces (id, name, slug, role) — the
+- [x] `GET /api/me` returning the user DTO plus their workspaces (id, name, slug, role) — the
       clients need both to render the shell.
-- [ ] `PATCH /api/me` accepting `displayName` and `avatarAttachmentId`, with partial-update
+      *`MeDto`. **Decided:** `workspaces` ships now as an always-empty array (workspaces do not
+      exist yet); DEVHUB-024 has the task to fill it. A token whose user was deleted → `401`.*
+- [x] `PATCH /api/me` accepting `displayName` and `avatarAttachmentId`, with partial-update
       semantics (omitted ≠ null).
-- [ ] Validation: display name 1–100 characters, trimmed.
-- [ ] Resolve `avatarUrl` as a short-lived presigned URL when an avatar key exists (skip until
+      *Returns `UserDto`. **Decided:** `avatarAttachmentId: null` removes the avatar; an id →
+      `404 attachments.not_found` until DEVHUB-090, which has the task to wire it.*
+- [x] Validation: display name 1–100 characters, trimmed.
+      *`DisplayNameRules.ValidDisplayName()`, now shared with registration.*
+- [x] Resolve `avatarUrl` as a short-lived presigned URL when an avatar key exists (skip until
       EPIC 15 lands; return `null` before then).
-- [ ] Tests: unauthenticated → 401; patch updates only the provided field; a too-long name → 400.
+- [x] Tests: unauthenticated → 401; patch updates only the provided field; a too-long name → 400.
+      *`MeTests` + `OptionalJsonConverterTests`.*
 
 ## Acceptance criteria
 
-- [ ] `GET /api/me` returns the caller's profile and their workspace memberships.
-- [ ] `PATCH` with only `displayName` does not clear the avatar.
-- [ ] The response never includes `passwordHash` or token values.
+- [x] `GET /api/me` returns the caller's profile and their workspace memberships.
+- [x] `PATCH` with only `displayName` does not clear the avatar.
+      *Verified against a seeded `avatar_key`, since no API can set one yet.*
+- [x] The response never includes `passwordHash` or token values.
 
 ## Technical notes
 
 Distinguishing "absent" from "null" in a PATCH body needs an optional wrapper or `JsonElement`
 inspection — a plain nullable DTO cannot tell `{"avatar": null}` from `{}`. Solve it once here;
 every later PATCH reuses the pattern.
+*Solved with `Optional<T>` + `OptionalJsonConverterFactory` (api-conventions.md §7).*
 
 ## Learning goals
 

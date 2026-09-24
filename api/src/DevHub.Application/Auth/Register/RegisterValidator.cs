@@ -1,3 +1,4 @@
+using DevHub.Application.Users;
 using DevHub.Domain.Users;
 using FluentValidation;
 
@@ -38,12 +39,6 @@ public sealed class RegisterValidator : AbstractValidator<RegisterCommand>
             .Must(password => !CommonPasswords.Contains(password))
                 .WithMessage("This password is too common. Choose a less predictable one.");
 
-        RuleFor(command => command.DisplayName)
-            .Cascade(CascadeMode.Stop)
-            // NotEmpty() alone accepts "   ": the handler trims, so that would store "".
-            .Must(name => !string.IsNullOrWhiteSpace(name)).WithMessage("Display name is required.")
-            // Matches the varchar(100) column (database-schema.md §2), measured after trimming
-            // because the trimmed value is what gets stored.
-            .Must(name => name.Trim().Length <= 100).WithMessage("Display name must be 100 characters or fewer.");
+        RuleFor(command => command.DisplayName).ValidDisplayName();
     }
 }

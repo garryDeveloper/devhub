@@ -1,4 +1,5 @@
 using DevHub.Api.Endpoints.Auth;
+using DevHub.Api.Endpoints.Me;
 
 namespace DevHub.Api.Endpoints;
 
@@ -30,6 +31,7 @@ public static class ApiEndpoints
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         api.MapAuthEndpoints();
+        api.MapMeEndpoints();
 
         return endpoints;
     }

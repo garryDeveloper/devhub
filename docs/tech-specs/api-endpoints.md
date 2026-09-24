@@ -49,8 +49,17 @@ Legend: 🔓 public · 🔒 authenticated · 👑 workspace `Owner` · 🪝 webh
 // token is the credential. Already-issued access tokens stay valid ≤ 15 min (auth-spec.md §4).
 // not subject to the register+login IP rate limit (auth-spec.md §6)
 
-// GET /api/me → 200 UserDto
+// GET /api/me → 200 MeDto
+{ "id": "…", "email": "…", "displayName": "Dario", "avatarUrl": null,
+  "workspaces": [ { "id": "…", "name": "Acme", "slug": "acme", "role": "Owner" } ] }
+// workspaces is always [] until DEVHUB-024 fills it; avatarUrl is null until EPIC 15
+// 401 no/invalid token, or the token's user was deleted (type …/errors/auth.unauthenticated)
+
 // PATCH /api/me { "displayName"?, "avatarAttachmentId"? } → 200 UserDto
+// partial update: an absent field is left alone; {} is a valid no-op
+// displayName: 1–100 characters after trimming, stored trimmed; null → 400 (a user always has a name)
+// avatarAttachmentId: null removes the avatar; an id → 404 attachments.not_found until DEVHUB-090
+// 401 as for GET
 ```
 
 ---

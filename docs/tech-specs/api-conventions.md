@@ -126,6 +126,12 @@ sort fields are whitelisted per endpoint — never interpolate user input into S
 - PATCH bodies contain only the fields being changed. Distinguish "absent" from "null":
   `{"assigneeId": null}` unassigns; omitting `assigneeId` leaves it alone. Use
   `JsonElement`/optional wrappers, not nullable-only DTOs.
+  - DECISION (DEVHUB-019): every PATCH command types its fields as `Optional<T>`
+    (`DevHub.Application.Common`). `default` = absent; a present value, including `null`, is set.
+    `OptionalJsonConverterFactory` (DevHub.Api, registered on the HTTP JSON options) does the
+    reading. It works because System.Text.Json never calls a converter for a property that is
+    missing from the body. Validators wrap each rule in `When(x => x.Field.HasValue, …)`, and
+    Swagger shows the field as plain `T` (`OptionalAwareDataContractResolver`).
 - Unknown properties in a body are rejected with `400` to catch client typos early.
 
 ## 8. Responses
