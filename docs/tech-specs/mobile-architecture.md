@@ -104,7 +104,17 @@ App start → read refresh token → POST /api/auth/refresh → GET /api/me
 Rules:
 
 - Tokens never touch `AsyncStorage`, Redux, or logs.
-- The API client retries a 401 exactly once after a single-flight refresh, same as web.
+- The API client retries a 401 exactly once after a single-flight refresh, same as web
+  (`shared/api/client.ts`, a port of the web client). Only a 401 from `/refresh` ends the
+  session. A network error keeps the stored token.
+- SecureStore is async: read and write it with `await`. On an Expo web build it is
+  unavailable, and `refreshTokenStorage.ts` falls back to memory, never `localStorage`.
+- `RootNavigator` renders `App` *or* `Auth` from `useAuth().user`. Login and logout never
+  navigate imperatively: changing which root screen is defined is the redirect.
+- The native splash (`expo-splash-screen`) stays up through the bootstrap and is hidden from
+  `NavigationContainer.onReady`.
+- Deep links received while signed out are replayed after login via
+  `UNSTABLE_routeNamesChangeBehavior="lastUnhandled"` on the root navigator (DEVHUB-022).
 - Logout clears SecureStore, the query cache, and resets navigation to `AuthStack`.
 - Biometric unlock is post-MVP; do not add it in the MVP tickets.
 

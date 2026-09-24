@@ -1,7 +1,9 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useAuth } from '../../features/auth/hooks/useAuth';
+import { Button } from '../../shared/components/Button';
 import { Screen } from '../../shared/components/Screen';
 import { colors } from '../../shared/theme/colors';
 import { spacing } from '../../shared/theme/spacing';
@@ -11,13 +13,12 @@ import type { MeStackParamList } from '../types';
 export function ProfileScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<MeStackParamList, 'Profile'>>();
+  const { user, logout } = useAuth();
 
   return (
     <Screen>
-      <Text style={styles.title}>Me</Text>
-      <Text style={styles.subtitle}>
-        Profile and account settings are built in their own ticket.
-      </Text>
+      <Text style={styles.title}>{user?.displayName ?? 'Me'}</Text>
+      <Text style={styles.subtitle}>{user?.email}</Text>
       <Pressable
         onPress={() => navigation.navigate('ApiHealth')}
         style={styles.link}
@@ -25,6 +26,15 @@ export function ProfileScreen() {
       >
         <Text style={styles.linkText}>Check API health</Text>
       </Pressable>
+      {/* No navigation call: logout() clears `user`, and RootNavigator swaps AppTabs for
+          AuthStack (Welcome), with nothing left in history to go back to. */}
+      <View style={styles.logout}>
+        <Button
+          label="Log out"
+          variant="secondary"
+          onPress={() => void logout()}
+        />
+      </View>
     </Screen>
   );
 }
@@ -47,5 +57,9 @@ const styles = StyleSheet.create({
   linkText: {
     ...typography.bodyStrong,
     color: colors.primary,
+  },
+  logout: {
+    marginTop: 'auto',
+    paddingBottom: spacing.lg,
   },
 });

@@ -184,6 +184,7 @@ cd web && npm install && npm run dev && npm run lint && npm run build
 
 # Mobile
 cd mobile && npm install && npm start
+npm run typecheck && npm run lint && npm test  # Jest (jest-expo) + RNTL
 ```
 
 ---
