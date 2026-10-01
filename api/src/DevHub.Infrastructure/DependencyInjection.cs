@@ -2,6 +2,7 @@ using DevHub.Application.Auth;
 using DevHub.Application.Common;
 using DevHub.Application.Users;
 using DevHub.Application.Workspaces;
+using DevHub.Application.Workspaces.Access;
 using DevHub.Infrastructure.Identity;
 using DevHub.Infrastructure.Integrations;
 using DevHub.Infrastructure.Persistence;
@@ -175,5 +176,8 @@ public static class DependencyInjection
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
         services.AddScoped<IWorkspaceQueries, WorkspaceQueries>();
+
+        // Scoped, never singleton: it caches answers for one request and one ICurrentUser.
+        services.AddScoped<IWorkspaceAccessService, WorkspaceAccessService>();
     }
 }

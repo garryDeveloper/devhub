@@ -30,6 +30,9 @@ creation, migration.
       not a migration).
 - [ ] Migration + index `(project_id, sort_order)`.
 - [ ] Unit tests: seeding, derived-state transitions, duplicate name rejected.
+- [ ] Implement `IWorkspaceAccessService.ForEnvironmentAsync` (uncomment the DEVHUB-026 reminder) as one
+      projected query up to `workspace_members`, with an integration test proving a user from
+      another workspace gets `null` (→ `404`).
 
 ## Acceptance criteria
 

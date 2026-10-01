@@ -23,21 +23,38 @@ and the convention that "no access" produces `404`.
 
 ## Tasks
 
-- [ ] Define `WorkspaceAccess(WorkspaceId, ProjectId?, Role)` and
+- [x] Define `WorkspaceAccess(WorkspaceId, ProjectId?, Role)` and
       `IWorkspaceAccessService` with `ForWorkspace`, `ForProject`, `ForIssue`,
       `ForEnvironment`, `ForRelease`, `ForDeployment`, `ForCicdRun` — each returning `null`
       when the caller has no access.
-- [ ] Implement each as a single projected query (no aggregate loading).
-- [ ] Add `RequireMember()` / `RequireOwner()` helpers throwing `NotFoundException` /
+      *Only `ForWorkspaceAsync` is implemented: the other entities do not exist yet. The rest
+      are commented-out reminders in the interface and in `WorkspaceAccessService`, each tagged
+      with the ticket that creates its entity and must implement it: `ForProject` DEVHUB-030,
+      `ForIssue` 036, `ForEnvironment` 062, `ForDeployment` 066, `ForRelease` 072,
+      `ForCicdRun` 077. `Role` is the `WorkspaceRole` enum; the caller comes from
+      `ICurrentUser`, so no resolver takes a user id.*
+- [x] Implement each as a single projected query (no aggregate loading).
+      *Results are cached per request (scoped service), "no access" included.*
+- [x] Add `RequireMember()` / `RequireOwner()` helpers throwing `NotFoundException` /
       `ForbiddenException`.
-- [ ] Retrofit DEVHUB-024/025 to use it.
-- [ ] Add an integration test per resolver proving cross-workspace access returns `404`.
+      *DECISION: they return `Result<WorkspaceAccess>` instead of throwing — "no access" is an
+      expected outcome, and expected outcomes are returned in this codebase (`Result.cs`). It
+      also avoids a global exception translator. Each takes the resource's own not-found error;
+      the 403 is `workspaces.owner_required`.*
+- [x] Retrofit DEVHUB-024/025 to use it.
+      *024: `UpdateWorkspaceHandler`. `GET`/list keep `IWorkspaceQueries`, which already filters
+      by membership inside its single query. 025 is not implemented yet — it uses the service
+      from the start.*
+- [x] Add an integration test per resolver proving cross-workspace access returns `404`.
+      *`WorkspaceAccessServiceTests` covers `ForWorkspace`; each later resolver adds its own.*
 
 ## Acceptance criteria
 
-- [ ] One helper call is all a handler needs to authorize.
-- [ ] Each resolver costs a single database round-trip.
+- [x] One helper call is all a handler needs to authorize.
+      *One resolver call plus `RequireX`, then one `if (access.IsFailure)`.*
+- [x] Each resolver costs a single database round-trip.
 - [ ] Cross-workspace access returns `404` for every resource type.
+      *Met for workspaces. Stays open until the last resolver (DEVHUB-077) lands with its test.*
 
 ## Technical notes
 

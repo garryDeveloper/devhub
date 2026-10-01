@@ -32,6 +32,9 @@ migration, indexes.
 - [ ] Raise the matching domain event from each method, carrying old and new values.
 - [ ] EF configuration + migration with the indexes from the schema spec.
 - [ ] Unit tests covering every legal and illegal transition, and event emission.
+- [ ] Implement `IWorkspaceAccessService.ForIssueAsync` (uncomment the DEVHUB-026 reminder) as one
+      projected query up to `workspace_members`, with an integration test proving a user from
+      another workspace gets `null` (→ `404`).
 
 ## Acceptance criteria
 

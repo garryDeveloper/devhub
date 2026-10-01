@@ -31,6 +31,9 @@ config on the project.
 - [ ] Raise `CicdRunCompleted` on terminal status.
 - [ ] Migration + index `(project_id, created_at DESC)`.
 - [ ] Unit tests: status mapping from GitHub's status/conclusion pairs, idempotent updates.
+- [ ] Implement `IWorkspaceAccessService.ForCicdRunAsync` (uncomment the DEVHUB-026 reminder) as one
+      projected query up to `workspace_members`, with an integration test proving a user from
+      another workspace gets `null` (→ `404`).
 
 ## Acceptance criteria
 

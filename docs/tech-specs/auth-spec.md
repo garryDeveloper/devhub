@@ -177,10 +177,14 @@ Webhooks                                     HMAC signature, no user token
 Scope resolution happens in a single query in the Application layer:
 
 ```csharp
+// IWorkspaceAccessService (DEVHUB-026). The caller is ICurrentUser — no user id parameter.
 // null → 404 (not 403): never confirm that a resource exists to a non-member
-Task<WorkspaceAccess?> GetAccessForIssue(Guid issueId, Guid userId, CancellationToken ct);
-record WorkspaceAccess(Guid WorkspaceId, Guid ProjectId, string Role);
+Task<WorkspaceAccess?> ForIssueAsync(Guid issueId, CancellationToken ct);   // added by DEVHUB-036
+record WorkspaceAccess(Guid WorkspaceId, Guid? ProjectId, WorkspaceRole Role);
+// then .RequireMember(notFound) / .RequireOwner(notFound) → Result: 404, or 403 workspaces.owner_required
 ```
+
+See backend-architecture.md §8 for the full contract.
 
 Anti-patterns to avoid:
 

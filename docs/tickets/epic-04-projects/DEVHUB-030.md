@@ -30,6 +30,9 @@ semantics, migration.
 - [ ] Invariant: a project member must be a workspace member.
 - [ ] EF configuration + migration with the unique index and the key CHECK constraint.
 - [ ] Unit tests: key validation, immutability, archive/unarchive, member rules.
+- [ ] Implement `IWorkspaceAccessService.ForProjectAsync` (uncomment the DEVHUB-026 reminder) as one
+      projected query up to `workspace_members`, with an integration test proving a user from
+      another workspace gets `null` (→ `404`).
 
 ## Acceptance criteria
 

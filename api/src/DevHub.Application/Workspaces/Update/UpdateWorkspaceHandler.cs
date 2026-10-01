@@ -1,42 +1,35 @@
 using DevHub.Application.Common;
+using DevHub.Application.Workspaces.Access;
 using DevHub.Application.Workspaces.Contracts;
 
 namespace DevHub.Application.Workspaces.Update;
 
 /// <summary>
-/// Renames a workspace (DEVHUB-024). The two authorization questions are asked in a fixed order,
-/// and the order is the point:
-/// <list type="number">
-/// <item><b>Scope</b> — is the caller a member? No → 404, exactly as if the workspace did not exist.</item>
-/// <item><b>Role</b> — is the caller an owner? No → 403. Safe now: a member already knows it exists.</item>
-/// </list>
-/// Swapping them would make the 403 an oracle: a stranger could tell real ids from invented ones.
+/// Renames a workspace (DEVHUB-024). Authorization is <see cref="IWorkspaceAccessService"/>'s
+/// (DEVHUB-026): scope first — a non-member gets 404, exactly as if the workspace did not exist —
+/// then role — a member who is not an owner gets 403, safe now because they already know it exists.
 /// </summary>
-/// <remarks>
-/// Written inline on purpose. DEVHUB-026 moves both checks into <c>IWorkspaceAccessService</c>;
-/// this is the pattern it will abstract.
-/// </remarks>
 public sealed class UpdateWorkspaceHandler(
-    ICurrentUser currentUser,
+    IWorkspaceAccessService accessService,
     IWorkspaceRepository workspaces,
     IUnitOfWork unitOfWork)
     : ICommandHandler<UpdateWorkspaceCommand, Result<WorkspaceDto>>
 {
     public async Task<Result<WorkspaceDto>> HandleAsync(UpdateWorkspaceCommand command, CancellationToken cancellationToken)
     {
-        // The aggregate is loaded anyway to rename it, and it brings its members: both checks
-        // are answered from what is already in memory, with no extra query.
-        var workspace = await workspaces.GetByIdAsync(command.WorkspaceId, cancellationToken).ConfigureAwait(false);
-
-        var caller = workspace?.Members.SingleOrDefault(member => member.UserId == currentUser.UserIdOrThrow);
-        if (workspace is null || caller is null)
+        var access = (await accessService.ForWorkspaceAsync(command.WorkspaceId, cancellationToken).ConfigureAwait(false))
+            .RequireOwner(WorkspaceErrors.NotFound);
+        if (access.IsFailure)
         {
-            return WorkspaceErrors.NotFound;
+            return access.Error!;
         }
 
-        if (!caller.IsOwner)
+        // Authorized, so the aggregate is loaded only for someone allowed to change it. Null here
+        // means it was deleted between the two queries: the same 404 as never having existed.
+        var workspace = await workspaces.GetByIdAsync(command.WorkspaceId, cancellationToken).ConfigureAwait(false);
+        if (workspace is null)
         {
-            return WorkspaceErrors.OwnerRequired;
+            return WorkspaceErrors.NotFound;
         }
 
         workspace.Rename(command.Name!);
@@ -48,7 +41,7 @@ public sealed class UpdateWorkspaceHandler(
             workspace.Id,
             workspace.Name,
             workspace.Slug,
-            caller.Role.ToString(),
+            access.Value.Role.ToString(),
             workspace.Members.Count,
             workspace.CreatedAt);
     }

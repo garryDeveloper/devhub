@@ -305,12 +305,27 @@ Three levels, all enforced in the Application layer:
 2. **Workspace scope** — the target resource resolves to a workspace the user is a member of.
 3. **Role** — `Owner` for destructive/settings operations; `Member` for everyday work.
 
-A helper resolves scope in one query:
+`IWorkspaceAccessService` (DEVHUB-026, `Application/Workspaces/Access`) resolves scope in one
+query per resource, and the `RequireMember` / `RequireOwner` extensions turn it into a decision:
 
 ```csharp
-Task<WorkspaceAccess?> GetAccessForProject(Guid projectId, Guid userId, CancellationToken ct);
-// null → the caller gets 404, never 403
+record WorkspaceAccess(Guid WorkspaceId, Guid? ProjectId, WorkspaceRole Role);
+
+// null → no access OR does not exist (indistinguishable) → the caller gets 404, never 403
+Task<WorkspaceAccess?> ForWorkspaceAsync(Guid workspaceId, CancellationToken ct);
+
+var access = (await accessService.ForWorkspaceAsync(id, ct)).RequireOwner(WorkspaceErrors.NotFound);
+if (access.IsFailure) return access.Error!;   // 404 for a non-member, 403 for a Member
 ```
+
+- The caller is always `ICurrentUser` — no resolver takes a user id.
+- Expected outcomes, so `Result`, not exceptions (no `NotFoundException`/`ForbiddenException`).
+- Scoped service; each answer is cached for the request, so asking twice costs one query.
+- One resolver per resource type, added by the ticket that creates the entity, with its own
+  cross-workspace `404` integration test: `ForProject` (DEVHUB-030), `ForIssue` (036),
+  `ForEnvironment` (062), `ForDeployment` (066), `ForRelease` (072), `ForCicdRun` (077).
+- Pure reads that already filter by membership inside their own query (`IWorkspaceQueries`) do
+  not need it: they are scoped by construction and a pre-check would only add a round-trip.
 
 Never trust a `workspaceId` from the request body — always derive it from the resource.
 

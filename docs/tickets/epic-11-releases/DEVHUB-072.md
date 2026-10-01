@@ -30,6 +30,9 @@ done" and "shipped".
 - [ ] Migration with `(project_id, version)` unique and the release-issue constraint.
 - [ ] Unit tests: publish twice → throws; edit version after publish → throws; issue linked to a
       second released release → throws.
+- [ ] Implement `IWorkspaceAccessService.ForReleaseAsync` (uncomment the DEVHUB-026 reminder) as one
+      projected query up to `workspace_members`, with an integration test proving a user from
+      another workspace gets `null` (→ `404`).
 
 ## Acceptance criteria
 

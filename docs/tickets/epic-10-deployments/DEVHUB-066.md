@@ -32,6 +32,9 @@ migration.
 - [ ] Migration with the partial unique index on `(environment_id, external_id)`.
 - [ ] Unit tests: legal transitions, backwards transition ignored, duplicate terminal callback
       is a no-op, duration computed correctly.
+- [ ] Implement `IWorkspaceAccessService.ForDeploymentAsync` (uncomment the DEVHUB-026 reminder) as one
+      projected query up to `workspace_members`, with an integration test proving a user from
+      another workspace gets `null` (→ `404`).
 
 ## Acceptance criteria
 
