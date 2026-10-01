@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../features/auth/hooks/useAuth';
+import { CreateWorkspaceModal } from '../../features/workspaces/components/CreateWorkspaceModal';
+import { WorkspaceSwitcher } from '../../features/workspaces/components/WorkspaceSwitcher';
+import { useCurrentWorkspace } from '../../features/workspaces/hooks/useCurrentWorkspace';
+import { getLastWorkspaceSlug } from '../../features/workspaces/lib/lastWorkspace';
+import type { Workspace } from '../../features/workspaces/types';
 import { Drawer } from '../../shared/components/Drawer';
 import { cn } from '../../shared/lib/cn';
 
@@ -8,15 +13,24 @@ interface NavItem {
   to: string;
   label: string;
   icon: string;
+  end?: boolean;
 }
 
-// A fixed demo workspace/project until the workspace feature exists to supply
-// a real one (DEVHUB-024). The shell does not fetch this.
-const primaryNav: NavItem[] = [
-  { to: '/', label: 'Overview', icon: '⌂' },
-  { to: '/w/demo/projects', label: 'Projects', icon: '▣' },
-  { to: '/debug/health', label: 'API health', icon: '⚕' },
-];
+// Workspace links point into the current workspace, and disappear when there is none (a new
+// account on the onboarding screen) rather than pointing somewhere broken.
+function primaryNav(workspace: Workspace | null): NavItem[] {
+  const workspaceItems: NavItem[] = workspace
+    ? [
+        { to: `/w/${workspace.slug}`, label: 'Overview', icon: '⌂', end: true },
+        { to: `/w/${workspace.slug}/projects`, label: 'Projects', icon: '▣' },
+      ]
+    : [];
+
+  return [
+    ...workspaceItems,
+    { to: '/debug/health', label: 'API health', icon: '⚕' },
+  ];
+}
 
 const secondaryNav: NavItem[] = [
   { to: '/notifications', label: 'Notifications', icon: '🔔' },
@@ -32,24 +46,37 @@ function navLinkClassName({ isActive }: { isActive: boolean }) {
   );
 }
 
-function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+interface NavLinksProps {
+  workspace: Workspace | null;
+  onNavigate?: () => void;
+  onCreateWorkspace: () => void;
+}
+
+function NavLinks({ workspace, onNavigate, onCreateWorkspace }: NavLinksProps) {
   return (
-    <nav className="flex flex-1 flex-col justify-between">
-      <ul className="space-y-1">
-        {primaryNav.map((item) => (
-          <li key={item.to}>
-            <NavLink
-              to={item.to}
-              end={item.to === '/'}
-              onClick={onNavigate}
-              className={navLinkClassName}
-            >
-              <span aria-hidden="true">{item.icon}</span>
-              {item.label}
-            </NavLink>
-          </li>
-        ))}
-      </ul>
+    <nav className="flex flex-1 flex-col justify-between gap-4">
+      <div className="space-y-3">
+        <WorkspaceSwitcher
+          current={workspace}
+          onNavigate={onNavigate}
+          onCreateWorkspace={onCreateWorkspace}
+        />
+        <ul className="space-y-1">
+          {primaryNav(workspace).map((item) => (
+            <li key={item.to}>
+              <NavLink
+                to={item.to}
+                end={item.end}
+                onClick={onNavigate}
+                className={navLinkClassName}
+              >
+                <span aria-hidden="true">{item.icon}</span>
+                {item.label}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      </div>
       <ul className="space-y-1 border-t border-slate-200 pt-2">
         {secondaryNav.map((item) => (
           <li key={item.to}>
@@ -72,14 +99,25 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 // sidebar stays mounted (docs/tickets DEVHUB-008 acceptance criteria).
 export function AppShell() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [createWorkspaceOpen, setCreateWorkspaceOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const workspace = useCurrentWorkspace(
+    user ? getLastWorkspaceSlug(user.id) : null,
+  );
 
   async function handleLogout() {
     await logout();
     // History replaced so back-navigation cannot land on protected content
     // (DEVHUB-020 acceptance criteria) — RequireAuth would redirect again anyway.
     navigate('/login', { replace: true });
+  }
+
+  // The create modal lives here, not in the switcher: the drawer copy of the switcher unmounts
+  // when the drawer closes, and the drawer's focus trap would fight the modal's.
+  function openCreateWorkspace() {
+    setMobileNavOpen(false);
+    setCreateWorkspaceOpen(true);
   }
 
   return (
@@ -116,7 +154,10 @@ export function AppShell() {
 
       <div className="flex min-h-0 flex-1">
         <aside className="hidden w-60 shrink-0 border-r border-slate-200 p-4 md:flex">
-          <NavLinks />
+          <NavLinks
+            workspace={workspace}
+            onCreateWorkspace={openCreateWorkspace}
+          />
         </aside>
 
         <main className="min-w-0 flex-1 overflow-y-auto p-6">
@@ -130,8 +171,17 @@ export function AppShell() {
         title="Menu"
         side="left"
       >
-        <NavLinks onNavigate={() => setMobileNavOpen(false)} />
+        <NavLinks
+          workspace={workspace}
+          onNavigate={() => setMobileNavOpen(false)}
+          onCreateWorkspace={openCreateWorkspace}
+        />
       </Drawer>
+
+      <CreateWorkspaceModal
+        open={createWorkspaceOpen}
+        onClose={() => setCreateWorkspaceOpen(false)}
+      />
     </div>
   );
 }

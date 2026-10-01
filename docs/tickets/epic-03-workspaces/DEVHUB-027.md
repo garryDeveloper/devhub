@@ -21,21 +21,31 @@ user was last.
 
 ## Tasks
 
-- [ ] Dropdown in the sidebar header listing the user's workspaces with their role.
-- [ ] Switching navigates to `/w/{slug}` and invalidates workspace-scoped queries.
-- [ ] "Create workspace" modal with name (slug preview), calling `POST /api/workspaces` and
+- [x] Dropdown in the sidebar header listing the user's workspaces with their role.
+      *Disclosure pattern (button + links), not `role="menu"`. The list comes from
+      `GET /api/workspaces` through TanStack Query, not from `/me`.*
+- [x] Switching navigates to `/w/{slug}` and invalidates workspace-scoped queries.
+      *Structural, not manual: workspace-scoped keys live under the workspace id
+      (`qk.projects(workspaceId)`), so a switch changes the key and nothing needs invalidating.*
+- [x] "Create workspace" modal with name (slug preview), calling `POST /api/workspaces` and
       navigating into the new workspace on success.
-- [ ] Remember the last workspace slug in `localStorage`; `/` redirects there, or to the first
+      *Read-only preview from `slugify()`, a mirror of `WorkspaceSlug.FromName`; only `name` is
+      sent. A 409, or a 400 on `slug`, is shown on the name field. The modal lives in the shell
+      so the mobile drawer can close without unmounting it.*
+- [x] Remember the last workspace slug in `localStorage`; `/` redirects there, or to the first
       workspace, or to an onboarding empty state when the user has none.
-- [ ] Empty state for a brand-new account that guides straight into creating a workspace.
-- [ ] Loading and error states for the workspace list.
+      *Key is per user (`devhub:lastWorkspace:{userId}`) and only written once `WorkspaceLayout`
+      has confirmed the slug. Routes without a slug (`/p/...`) show the last workspace.*
+- [x] Empty state for a brand-new account that guides straight into creating a workspace.
+- [x] Loading and error states for the workspace list.
+      *Also a "Workspace not found" state for a slug the user does not belong to.*
 
 ## Acceptance criteria
 
-- [ ] A user with several workspaces can switch without a full page reload.
-- [ ] After creating a workspace, the app is already inside it.
-- [ ] A returning user lands in the workspace they last used.
-- [ ] A user with zero workspaces sees the onboarding empty state, not a broken shell.
+- [x] A user with several workspaces can switch without a full page reload.
+- [x] After creating a workspace, the app is already inside it.
+- [x] A returning user lands in the workspace they last used.
+- [x] A user with zero workspaces sees the onboarding empty state, not a broken shell.
 
 ## Technical notes
 

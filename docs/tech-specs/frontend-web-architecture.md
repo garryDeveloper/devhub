@@ -119,6 +119,13 @@ export const qk = {
 };
 ```
 
+**Workspace scoping (DEVHUB-027).** Every workspace-scoped key starts with
+`['workspaces', workspaceId, …]`. Switching workspace changes the key, so data from workspace A
+can never render inside B, and the switcher never invalidates anything by hand. A new
+workspace-scoped query must follow this pattern. The current workspace comes from the URL
+(`/w/:workspaceSlug`); `WorkspaceLayout` gates those routes (it shows "not found" for a slug the
+user does not belong to) and remembers the last one per user in `localStorage`.
+
 Defaults: `staleTime: 30_000`, `retry: 1`, `refetchOnWindowFocus: true` for dashboards and
 environments (freshness matters), `false` for form-heavy screens.
 

@@ -5,7 +5,9 @@ import { LoginPage } from '../features/auth/pages/LoginPage';
 import { RegisterPage } from '../features/auth/pages/RegisterPage';
 import { AppShell } from './layouts/AppShell';
 import { AuthLayout } from './layouts/AuthLayout';
+import { WorkspaceLayout } from './layouts/WorkspaceLayout';
 import { HealthCheckPage } from './routes/HealthCheckPage';
+import { HomeRedirect } from './routes/HomeRedirect';
 import { NotFoundPage } from './routes/NotFoundPage';
 import { PlaceholderPage } from './routes/PlaceholderPage';
 import { RouteErrorBoundary } from './routes/RouteErrorBoundary';
@@ -22,22 +24,30 @@ export const router = createBrowserRouter([
       {
         element: <AppShell />,
         children: [
-          { index: true, element: <PlaceholderPage title="Overview" /> },
+          // `/` decides where the user belongs: last workspace, first workspace or onboarding.
+          { index: true, element: <HomeRedirect /> },
           {
+            // Nothing below renders until the slug is one of the user's workspaces.
             path: 'w/:workspaceSlug',
-            element: <PlaceholderPage title="Workspace dashboard" />,
-          },
-          {
-            path: 'w/:workspaceSlug/settings',
-            element: <PlaceholderPage title="Workspace settings" />,
-          },
-          {
-            path: 'w/:workspaceSlug/members',
-            element: <PlaceholderPage title="Workspace members" />,
-          },
-          {
-            path: 'w/:workspaceSlug/projects',
-            element: <PlaceholderPage title="Project list" />,
+            element: <WorkspaceLayout />,
+            children: [
+              {
+                index: true,
+                element: <PlaceholderPage title="Workspace dashboard" />,
+              },
+              {
+                path: 'settings',
+                element: <PlaceholderPage title="Workspace settings" />,
+              },
+              {
+                path: 'members',
+                element: <PlaceholderPage title="Workspace members" />,
+              },
+              {
+                path: 'projects',
+                element: <PlaceholderPage title="Project list" />,
+              },
+            ],
           },
           {
             path: 'p/:projectKey',
