@@ -30,6 +30,8 @@ public sealed record Error(string Code, string Message, ErrorType Type)
 
     public static Error Unauthorized(string code, string message) => new(code, message, ErrorType.Unauthorized);
 
+    public static Error Forbidden(string code, string message) => new(code, message, ErrorType.Forbidden);
+
     public static Error TooManyRequests(string code, string message, TimeSpan retryAfter) =>
         new(code, message, ErrorType.TooManyRequests) { RetryAfter = retryAfter };
 }
@@ -47,6 +49,12 @@ public enum ErrorType
 
     /// <summary>401. The caller could not be authenticated (bad credentials, bad token).</summary>
     Unauthorized,
+
+    /// <summary>
+    /// 403. The caller can see the resource — they are a member of its workspace — but their role
+    /// is too low for this operation. Never for a non-member: that is <see cref="NotFound"/>.
+    /// </summary>
+    Forbidden,
 
     /// <summary>429, with a Retry-After header. Throttling a specific account, e.g. login lockout.</summary>
     TooManyRequests,

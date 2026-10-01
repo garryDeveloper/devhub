@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -28,6 +29,43 @@ public static partial class WorkspaceSlug
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
+        var slug = Derive(name);
+        Validate(slug);
+        return slug;
+    }
+
+    /// <summary>
+    /// The non-throwing <see cref="FromName"/>, for input validation (DEVHUB-024): a name that
+    /// yields no usable slug is a <c>400</c> for the client, not a broken invariant.
+    /// </summary>
+    public static bool TryFromName(string? name, [NotNullWhen(true)] out string? slug)
+    {
+        slug = null;
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return false;
+        }
+
+        var candidate = Derive(name);
+        if (!IsValid(candidate))
+        {
+            return false;
+        }
+
+        slug = candidate;
+        return true;
+    }
+
+    /// <summary>
+    /// The non-throwing <see cref="Validate"/>: same rules, so a validator that calls this can
+    /// never accept a slug the aggregate would then reject.
+    /// </summary>
+    public static bool IsValid([NotNullWhen(true)] string? slug) =>
+        slug is { Length: >= MinLength and <= MaxLength } && KebabCase().IsMatch(slug);
+
+    private static string Derive(string name)
+    {
         // FormD splits "é" into "e" + a combining accent; dropping the accents keeps "cafe"
         // instead of turning "Café" into "caf".
         var decomposed = name.Normalize(NormalizationForm.FormD);
@@ -48,7 +86,6 @@ public static partial class WorkspaceSlug
             slug = slug[..MaxLength].TrimEnd('-');
         }
 
-        Validate(slug);
         return slug;
     }
 

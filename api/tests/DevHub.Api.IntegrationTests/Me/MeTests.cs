@@ -49,7 +49,8 @@ public sealed class MeTests(DevHubApiFactory api) : IClassFixture<DevHubApiFacto
         Assert.Equal("Ada", me.GetProperty("displayName").GetString());
         Assert.Equal(JsonValueKind.Null, me.GetProperty("avatarUrl").ValueKind);
 
-        // Present and empty until workspaces exist (DEVHUB-024 fills it).
+        // Present and empty for a user with no workspace yet. The filled case is covered in
+        // WorkspaceEndpointTests (DEVHUB-024).
         Assert.Equal(0, me.GetProperty("workspaces").GetArrayLength());
     }
 

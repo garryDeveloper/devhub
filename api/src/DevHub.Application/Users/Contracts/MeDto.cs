@@ -5,8 +5,8 @@ namespace DevHub.Application.Users.Contracts;
 /// they belong to — everything a client needs to render its shell after a cold start.
 /// </summary>
 /// <param name="Workspaces">
-/// Always empty until workspaces exist: DEVHUB-024 fills it. The shape is fixed now so the web
-/// and mobile clients (DEVHUB-020/022) consume the final contract from day one.
+/// The workspaces the caller is a member of, ordered by name, with their role in each
+/// (DEVHUB-024). Empty for a user who has not created or joined one yet.
 /// </param>
 public sealed record MeDto(
     Guid Id,

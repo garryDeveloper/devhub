@@ -21,22 +21,27 @@ are a member of") is applied.
 
 ## Tasks
 
-- [ ] `POST` creates the workspace with the caller as owner; derive the slug when not supplied
+- [x] `POST` creates the workspace with the caller as owner; derive the slug when not supplied
       and return `409` on a slug collision.
-- [ ] `GET /api/workspaces` returns only workspaces the caller belongs to, with their role and
+- [x] `GET /api/workspaces` returns only workspaces the caller belongs to, with their role and
       member count. Not paged — a user has few.
-- [ ] `GET /{id}` returns `404` when the caller is not a member (never `403`).
-- [ ] `PATCH /{id}` (name only) requires the `Owner` role → `403` for a member.
-- [ ] Integration tests: list isolation between two users, 404 for a non-member, 403 for a
+- [x] `GET /{id}` returns `404` when the caller is not a member (never `403`).
+- [x] `PATCH /{id}` (name only) requires the `Owner` role → `403` for a member.
+      *403 type is `workspaces.owner_required` (new `ErrorType.Forbidden`). Validation (400)
+      runs first, then scope (404), then role (403). Checks are inline in the handler until
+      DEVHUB-026 moves them into `IWorkspaceAccessService`.*
+- [x] Integration tests: list isolation between two users, 404 for a non-member, 403 for a
       member calling PATCH, 409 on duplicate slug.
-- [ ] Fill `MeDto.Workspaces` in `GetMeHandler` (id, name, slug, role). DEVHUB-019 shipped the
+- [x] Fill `MeDto.Workspaces` in `GetMeHandler` (id, name, slug, role). DEVHUB-019 shipped the
       field as an always-empty array so the clients consume the final contract.
+      *Built from the same `IWorkspaceQueries.ListForUserAsync` as `GET /api/workspaces`, mapped
+      to the smaller `WorkspaceSummaryDto`; the endpoints return `WorkspaceDto`.*
 
 ## Acceptance criteria
 
-- [ ] User A never sees user B's workspaces in any response.
-- [ ] A non-member gets `404`, a member-without-role gets `403` — and there is a test for each.
-- [ ] Slug is unique across the system and immutable.
+- [x] User A never sees user B's workspaces in any response.
+- [x] A non-member gets `404`, a member-without-role gets `403` — and there is a test for each.
+- [x] Slug is unique across the system and immutable.
 
 ## Technical notes
 

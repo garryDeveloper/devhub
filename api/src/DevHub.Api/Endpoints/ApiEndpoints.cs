@@ -1,5 +1,6 @@
 using DevHub.Api.Endpoints.Auth;
 using DevHub.Api.Endpoints.Me;
+using DevHub.Api.Endpoints.Workspaces;
 
 namespace DevHub.Api.Endpoints;
 
@@ -32,6 +33,7 @@ public static class ApiEndpoints
 
         api.MapAuthEndpoints();
         api.MapMeEndpoints();
+        api.MapWorkspaceEndpoints();
 
         return endpoints;
     }

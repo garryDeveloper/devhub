@@ -1,9 +1,11 @@
 using DevHub.Application.Auth;
 using DevHub.Application.Common;
 using DevHub.Application.Users;
+using DevHub.Application.Workspaces;
 using DevHub.Infrastructure.Identity;
 using DevHub.Infrastructure.Integrations;
 using DevHub.Infrastructure.Persistence;
+using DevHub.Infrastructure.Persistence.Queries;
 using DevHub.Infrastructure.Persistence.Repositories;
 using DevHub.Infrastructure.Storage;
 using DevHub.Infrastructure.Time;
@@ -171,5 +173,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, EfUnitOfWork>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
+        services.AddScoped<IWorkspaceQueries, WorkspaceQueries>();
     }
 }

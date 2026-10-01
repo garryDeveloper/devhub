@@ -56,6 +56,7 @@ public static class ErrorResultExtensions
         {
             ErrorType.Validation => (StatusCodes.Status400BadRequest, "The request is invalid."),
             ErrorType.Unauthorized => (StatusCodes.Status401Unauthorized, "Authentication failed."),
+            ErrorType.Forbidden => (StatusCodes.Status403Forbidden, "Forbidden."),
             ErrorType.NotFound => (StatusCodes.Status404NotFound, "The resource was not found."),
             ErrorType.Conflict => (StatusCodes.Status409Conflict, "The request conflicts with the current state."),
             ErrorType.TooManyRequests => (StatusCodes.Status429TooManyRequests, "Too many requests."),

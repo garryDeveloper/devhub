@@ -260,4 +260,61 @@ public sealed class WorkspaceTests
     {
         Assert.Throws<DomainException>(() => Workspace.Create("Acme", _ownerId, Now, new string('a', 51)));
     }
+
+    // DEVHUB-024: the validator uses the non-throwing variants. They must agree with the throwing
+    // ones exactly, or the API would accept input the aggregate then rejects with a 500.
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("ab")]
+    [InlineData("Acme")]
+    [InlineData("acme corp")]
+    [InlineData("-acme")]
+    [InlineData("acme-")]
+    [InlineData("acme--corp")]
+    [InlineData("acme_corp")]
+    public void IsValid_rejects_every_slug_Validate_rejects(string? slug)
+    {
+        Assert.False(WorkspaceSlug.IsValid(slug));
+    }
+
+    [Theory]
+    [InlineData("abc")]
+    [InlineData("acme-2")]
+    [InlineData("my-team")]
+    public void IsValid_accepts_what_Validate_accepts(string slug)
+    {
+        WorkspaceSlug.Validate(slug);
+
+        Assert.True(WorkspaceSlug.IsValid(slug));
+    }
+
+    [Fact]
+    public void IsValid_enforces_the_same_50_character_limit()
+    {
+        Assert.True(WorkspaceSlug.IsValid(new string('a', 50)));
+        Assert.False(WorkspaceSlug.IsValid(new string('a', 51)));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("   ")]
+    [InlineData("AB")]
+    [InlineData("🚀🚀🚀")]
+    [InlineData("東京チーム")]
+    public void TryFromName_fails_where_FromName_would_throw(string? name)
+    {
+        Assert.False(WorkspaceSlug.TryFromName(name, out var slug));
+        Assert.Null(slug);
+    }
+
+    [Theory]
+    [InlineData("Café Élite", "cafe-elite")]
+    [InlineData("Team #2 (Backend)", "team-2-backend")]
+    public void TryFromName_derives_the_same_slug_as_FromName(string name, string expected)
+    {
+        Assert.True(WorkspaceSlug.TryFromName(name, out var slug));
+        Assert.Equal(expected, slug);
+        Assert.Equal(WorkspaceSlug.FromName(name), slug);
+    }
 }

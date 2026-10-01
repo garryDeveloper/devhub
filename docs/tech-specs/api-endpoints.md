@@ -52,7 +52,8 @@ Legend: 🔓 public · 🔒 authenticated · 👑 workspace `Owner` · 🪝 webh
 // GET /api/me → 200 MeDto
 { "id": "…", "email": "…", "displayName": "Dario", "avatarUrl": null,
   "workspaces": [ { "id": "…", "name": "Acme", "slug": "acme", "role": "Owner" } ] }
-// workspaces is always [] until DEVHUB-024 fills it; avatarUrl is null until EPIC 15
+// workspaces: the caller's memberships ordered by name, with the caller's role in each
+// (WorkspaceSummaryDto — no memberCount; that is WorkspaceDto, §2). avatarUrl is null until EPIC 15
 // 401 no/invalid token, or the token's user was deleted (type …/errors/auth.unauthenticated)
 
 // PATCH /api/me { "displayName"?, "avatarAttachmentId"? } → 200 UserDto
@@ -78,11 +79,26 @@ Legend: 🔓 public · 🔒 authenticated · 👑 workspace `Owner` · 🪝 webh
 | DELETE | `/api/workspaces/{workspaceId}/members/{memberId}` | 👑 | DEVHUB-025 |
 
 ```jsonc
-// POST /api/workspaces { "name": "Acme", "slug": "acme" }   slug optional → derived
-// 201 { "id","name","slug","role":"Owner","memberCount":1,"createdAt" }
-// 409 slug taken
+// WorkspaceDto — returned by every endpoint below; role is the CALLER's role in that workspace
+{ "id": "…", "name": "Acme", "slug": "acme", "role": "Owner", "memberCount": 1, "createdAt": "…" }
 
-// GET /api/workspaces → 200 WorkspaceSummaryDto[]  (not paged; a user has few)
+// POST /api/workspaces { "name": "Acme", "slug": "acme" }   slug optional → derived from name
+// 201 WorkspaceDto · Location: /api/workspaces/{id} · the caller is the only member, as Owner
+// name: 1–80 characters after trimming, stored trimmed → else 400 errors.name
+// slug: 3–50 chars, lowercase kebab ("acme-2"), used as given, never rewritten → else 400 errors.slug
+// derived slug: "Café Élite" → "cafe-elite"; a name with nothing to derive from ("東京チーム")
+//   → 400 errors.slug, the client must supply one
+// 409 slug taken, by anyone (type …/errors/workspaces.slug_taken) — unique system-wide, immutable
+
+// GET /api/workspaces → 200 WorkspaceDto[]  only the caller's memberships, ordered by name
+// (not paged; a user has few)
+
+// GET /api/workspaces/{workspaceId} → 200 WorkspaceDto
+// 404 not a member OR does not exist — indistinguishable, never 403 (type …/errors/workspaces.not_found)
+
+// PATCH /api/workspaces/{workspaceId} { "name": "Acme Corp" } → 200 WorkspaceDto
+// name only, required (the slug is immutable; a slug in the body is ignored) · 400 errors.name
+// 404 not a member (as for GET) · 403 a member who is not an Owner (type …/errors/workspaces.owner_required)
 
 // POST .../members { "email": "ana@example.com", "role": "Member" }
 // 201 MemberDto · 404 user not found · 409 already a member

@@ -1,10 +1,11 @@
 using DevHub.Application.Common;
 using DevHub.Application.Users.Contracts;
+using DevHub.Application.Workspaces;
 
 namespace DevHub.Application.Users.Me;
 
 /// <summary>Turns "I have a token" into "I know who I am and what I can see" (DEVHUB-019).</summary>
-public sealed class GetMeHandler(ICurrentUser currentUser, IUserRepository users)
+public sealed class GetMeHandler(ICurrentUser currentUser, IUserRepository users, IWorkspaceQueries workspaceQueries)
     : IQueryHandler<GetMeQuery, Result<MeDto>>
 {
     public async Task<Result<MeDto>> HandleAsync(GetMeQuery query, CancellationToken cancellationToken)
@@ -17,8 +18,15 @@ public sealed class GetMeHandler(ICurrentUser currentUser, IUserRepository users
 
         var profile = UserDto.From(user);
 
-        // Workspaces do not exist yet (DEVHUB-023). DEVHUB-024 replaces this with the caller's
-        // memberships, in the same query shape the workspace list uses.
-        return new MeDto(profile.Id, profile.Email, profile.DisplayName, profile.AvatarUrl, Workspaces: []);
+        // The same membership-scoped query GET /api/workspaces uses (DEVHUB-024), so /me and the
+        // workspace list can never disagree about which workspaces the caller is in.
+        var workspaces = await workspaceQueries.ListForUserAsync(user.Id, cancellationToken).ConfigureAwait(false);
+
+        return new MeDto(
+            profile.Id,
+            profile.Email,
+            profile.DisplayName,
+            profile.AvatarUrl,
+            [.. workspaces.Select(workspace => new WorkspaceSummaryDto(workspace.Id, workspace.Name, workspace.Slug, workspace.Role))]);
     }
 }
