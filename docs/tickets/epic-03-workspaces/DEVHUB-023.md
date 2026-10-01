@@ -21,21 +21,23 @@ every later ticket resolves to "is this user a member of this workspace".
 
 ## Tasks
 
-- [ ] `Workspace` aggregate in `Domain/Workspaces` with `Members` as a private collection
+- [x] `Workspace` aggregate in `Domain/Workspaces` with `Members` as a private collection
       exposed read-only.
-- [ ] `Workspace.Create(name, ownerId)` adds the owner as a member in the same operation.
-- [ ] Domain methods: `AddMember`, `RemoveMember`, `ChangeMemberRole`, `Rename`.
-- [ ] Invariant: the workspace always keeps at least one `Owner`; removing or demoting the last
+- [x] `Workspace.Create(name, ownerId)` adds the owner as a member in the same operation.
+      *(Implemented as `Create(name, ownerId, now, slug?)`: the domain has no clock, and
+      DEVHUB-024 accepts an optional explicit slug.)*
+- [x] Domain methods: `AddMember`, `RemoveMember`, `ChangeMemberRole`, `Rename`.
+- [x] Invariant: the workspace always keeps at least one `Owner`; removing or demoting the last
       owner throws `DomainException`.
-- [ ] Slug: lowercase kebab, derived from the name, unique, 3–50 chars, immutable after creation.
-- [ ] EF configuration + migration for `workspaces` and `workspace_members`
+- [x] Slug: lowercase kebab, derived from the name, unique, 3–50 chars, immutable after creation.
+- [x] EF configuration + migration for `workspaces` and `workspace_members`
       (unique `(workspace_id, user_id)`, index on `user_id`).
-- [ ] Unit tests for every invariant, including the last-owner rules.
+- [x] Unit tests for every invariant, including the last-owner rules.
 
 ## Acceptance criteria
 
-- [ ] Creating a workspace yields exactly one `Owner` member.
-- [ ] Removing the last owner throws; removing a second owner does not.
+- [x] Creating a workspace yields exactly one `Owner` member.
+- [x] Removing the last owner throws; removing a second owner does not.
 - [ ] Adding the same user twice is rejected by the domain and by the unique index.
 
 ## Technical notes

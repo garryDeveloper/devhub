@@ -78,7 +78,7 @@ token revokes the entire chain (see [`tech-specs/auth-spec.md`](tech-specs/auth-
 | Id | Guid | PK |
 | Name | string(80) | |
 | Slug | string(50) | unique, lowercase kebab |
-| OwnerId | Guid | FK → User |
+| OwnerId | Guid | FK → User (RESTRICT). The creator, **not** the authority on ownership: a workspace may have several `Owner` members and the creator may later be demoted or leave. Authorization reads `WorkspaceMember.Role`, never this column |
 | CreatedAt / UpdatedAt | timestamptz | |
 
 Invariants: always has ≥ 1 member with role `Owner`; the owner cannot be removed or demoted
