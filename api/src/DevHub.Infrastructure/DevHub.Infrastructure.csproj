@@ -1,5 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <!-- DEVHUB-113: the SAME id as DevHub.Api, so DevHubDbContextFactory (`dotnet ef`) reads the
+         same user-secrets store as the running API and both reach the same database.
+         UserSecretsIdTests fails if the two ever differ. -->
+    <UserSecretsId>8fda9d03-56e1-4574-9699-b2eae650dfa6</UserSecretsId>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\DevHub.Application\DevHub.Application.csproj" />
     <ProjectReference Include="..\DevHub.Domain\DevHub.Domain.csproj" />
@@ -18,6 +25,11 @@
     <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.12" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.12" />
     <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.12" />
+
+    <!-- DEVHUB-113: configuration for the design-time factory only (`dotnet ef`). The running
+         API gets these providers from the host; the factory has no host, so it builds its own. -->
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.12" />
 
     <!-- DEVHUB-013: just PasswordHasher<TUser> and its options — not the full Identity.Stores
          package, which drags in IUserStore/EF conventions this project defines for itself. -->

@@ -162,6 +162,9 @@ Fill these in as the projects are scaffolded; keep this table accurate.
 ```bash
 # Backend
 cd api && dotnet restore && dotnet tool restore
+# Local secrets (once): load the committed example into user-secrets, then replace the
+# REPLACE_ME placeholders with random values — see local-development.md §4 (DEVHUB-113).
+cat secrets.example.json | dotnet user-secrets set --project src/DevHub.Api
 dotnet build DevHub.sln
 dotnet test                                    # integration tests need Docker
 dotnet run --project src/DevHub.Api

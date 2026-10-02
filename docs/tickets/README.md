@@ -1,6 +1,6 @@
 # DevHub backlog
 
-112 tickets across 18 epics. Work them in the order given by [`../roadmap.md`](../roadmap.md),
+113 tickets across 18 epics. Work them in the order given by [`../roadmap.md`](../roadmap.md),
 **not** in numeric order. Each ticket carries its own context, scope, tasks, acceptance criteria,
 technical notes and learning goals, and defers the checklist to
 [`../definition-of-done.md`](../definition-of-done.md).
@@ -28,6 +28,7 @@ Size: XS (< 2 h) · S (half a day) · M (a day) · L (two days or more).
 | [DEVHUB-010](epic-01-foundation/DEVHUB-010.md) | Linting, formatting and code style | P1 | S |
 | [DEVHUB-011](epic-01-foundation/DEVHUB-011.md) | Set up the test projects | P0 | M |
 | [DEVHUB-012](epic-01-foundation/DEVHUB-012.md) | Baseline GitHub Actions CI | P0 | M |
+| [DEVHUB-113](epic-01-foundation/DEVHUB-113.md) | Discoverable local secrets, one source for the API and `dotnet ef` | P1 | S |
 
 ### EPIC 2 — Authentication & user account · [`epic-02-auth/`](epic-02-auth/)
 

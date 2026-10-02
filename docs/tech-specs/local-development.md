@@ -122,30 +122,56 @@ dotnet run --project src/DevHub.Api
 The startup project is `DevHub.Infrastructure`, not `DevHub.Api`. A design-time factory
 (`DevHubDbContextFactory`) builds the context for the tooling, so generating and applying
 migrations never boots the web application — schema work does not depend on the CORS allow-list
-or on anything else `Program.cs` validates. The factory reads `ConnectionStrings__Default` from
-the environment and otherwise falls back to `localhost:5432`; if you overrode `POSTGRES_PORT`
-in `infrastructure/.env`, export it to match:
+or on anything else `Program.cs` validates.
+
+### Local secrets (DEVHUB-113)
+
+This repository is public: **no secret is ever committed**, not even a local one. Secrets live in
+.NET user-secrets, which are stored outside the repository
+(`%APPDATA%\Microsoft\UserSecrets\<id>\secrets.json` on Windows,
+`~/.microsoft/usersecrets/<id>/secrets.json` elsewhere), so they cannot end up in a commit.
+
+What the API needs is committed as [`api/secrets.example.json`](../../api/secrets.example.json):
+every key, with placeholder values only. Load it once, then replace the two placeholders with
+random values generated on your machine:
 
 ```bash
-export ConnectionStrings__Default="Host=localhost;Port=5433;Database=devhub;Username=devhub;Password=devhub"
+# bash (from api/)
+cat secrets.example.json | dotnet user-secrets set --project src/DevHub.Api
+dotnet user-secrets set "Jwt:Secret" "$(openssl rand -base64 48)" --project src/DevHub.Api
+dotnet user-secrets set "Webhooks:DefaultSecret" "$(openssl rand -hex 32)" --project src/DevHub.Api
 ```
 
-Secrets never live in `appsettings.json`:
-
-```bash
-cd api/src/DevHub.Api
-dotnet user-secrets init
-dotnet user-secrets set "ConnectionStrings:Default" \
-  "Host=localhost;Port=5432;Database=devhub;Username=devhub;Password=devhub"
-dotnet user-secrets set "Jwt:Secret" "$(openssl rand -base64 48)"
-dotnet user-secrets set "Webhooks:DefaultSecret" "$(openssl rand -hex 32)"
-dotnet user-secrets set "Storage:AccessKey" "devhub"
-dotnet user-secrets set "Storage:SecretKey" "devhub123"
+```powershell
+# PowerShell (from api\)
+Get-Content secrets.example.json | dotnet user-secrets set --project src/DevHub.Api
+$jwt = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(48))
+$hook = [Convert]::ToHexString([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+dotnet user-secrets set "Jwt:Secret" $jwt --project src/DevHub.Api
+dotnet user-secrets set "Webhooks:DefaultSecret" $hook --project src/DevHub.Api
 ```
 
-Configuration layering: `appsettings.json` (safe defaults) → `appsettings.Development.json` →
-user-secrets → environment variables. In AWS the last two become SSM parameters injected as
-environment variables (DEVHUB-097).
+The placeholders (`REPLACE_ME`) are deliberately too short to pass validation: if one is left in
+place, the API refuses to start and names the setting, instead of running with a secret anyone can
+read on GitHub. Check what you have with `dotnet user-secrets list --project src/DevHub.Api`.
+
+| Setting | Required | What it is | Local value |
+|---|---|---|---|
+| `ConnectionStrings:Default` | always | PostgreSQL connection | compose defaults (§3); change `Port` if you set `POSTGRES_PORT` |
+| `Jwt:Secret` | always | HMAC key that signs access tokens, ≥ 32 chars | random, generated locally |
+| `Webhooks:DefaultSecret` | always | HMAC key for incoming webhooks, ≥ 32 chars | random, generated locally |
+| `Storage:AccessKey` / `Storage:SecretKey` | Development only | MinIO credentials (EPIC 15); real AWS uses the instance role, never keys | `devhub` / `devhub123` |
+| `Cors:AllowedOrigins` | outside Development | allowed web origins | already in `appsettings.Development.json` |
+
+**One source for the API and `dotnet ef`.** DevHub.Infrastructure declares the same
+`UserSecretsId` as DevHub.Api, so the design-time factory reads the same connection string the API
+does (an architecture test keeps the two ids equal). If you moved Postgres to 5433, change the
+connection string in user-secrets once and both follow. Precedence in the factory: environment
+variable `ConnectionStrings__Default` → user-secrets → `localhost:5432`.
+
+Configuration layering in the API: `appsettings.json` (safe defaults) →
+`appsettings.Development.json` → user-secrets → environment variables. In AWS the last two become
+SSM parameters injected as environment variables (DEVHUB-097).
 
 Common commands:
 
@@ -266,7 +292,9 @@ generated URL.
 | Symptom | Cause / fix |
 |---|---|
 | `password authentication failed` | container recreated without the volume, or a stale password in user-secrets |
-| `relation "issues" does not exist` | migrations not applied — `dotnet ef database update` |
+| `relation "issues" does not exist` | migrations not applied — `dotnet ef database update`. If they were applied, check `dotnet ef migrations list` reaches the same database as the API (§4, "One source") |
+| `No connection could be made … actively refused it` | Postgres is not running: `docker compose -f infrastructure/docker-compose.yml up -d` (with your `infrastructure/.env` if you moved the port) |
+| `OptionsValidationException … minimum length of '32'` | a `REPLACE_ME` placeholder is still in user-secrets (§4) |
 | CORS error in the browser | origin not in the API allow-list, or the API restarted without the Development profile |
 | 401 on every request after ~15 min | refresh flow broken; check the single-flight refresh in the API client |
 | Integration tests hang | Docker not running, or the Testcontainers image is still pulling |
