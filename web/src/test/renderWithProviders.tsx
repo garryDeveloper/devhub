@@ -6,6 +6,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { vi } from 'vitest';
 import type { AuthContextValue } from '../features/auth/context/authContext';
 import { AuthContext } from '../features/auth/context/authContext';
+import { ToastProvider } from '../shared/components/Toast';
 
 export const testUser = {
   id: 'user-1',
@@ -40,7 +41,9 @@ export function renderWithProviders(
 
   const Providers = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>
-      <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>
+      <ToastProvider>
+        <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>
+      </ToastProvider>
     </QueryClientProvider>
   );
 

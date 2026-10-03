@@ -37,8 +37,8 @@ App
 | `/forgot-password` | Forgot password | public |
 | `/` | Redirect to last workspace | private |
 | `/w/:workspaceSlug` | Workspace dashboard | private |
-| `/w/:workspaceSlug/settings` | Workspace settings | owner |
-| `/w/:workspaceSlug/members` | Members + invite modal | owner |
+| `/w/:workspaceSlug/settings` | Workspace settings | member (rename: owner) |
+| `/w/:workspaceSlug/members` | Members + invite modal | member (mutations: owner) |
 | `/w/:workspaceSlug/projects` | Project list | private |
 | `/p/:projectKey` | Project overview / dashboard | member |
 | `/p/:projectKey/issues` | Issue list (filters in query string) | member |

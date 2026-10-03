@@ -3,6 +3,8 @@ import { RequireAuth } from '../features/auth/components/RequireAuth';
 import { ForgotPasswordPage } from '../features/auth/pages/ForgotPasswordPage';
 import { LoginPage } from '../features/auth/pages/LoginPage';
 import { RegisterPage } from '../features/auth/pages/RegisterPage';
+import { WorkspaceMembersPage } from '../features/workspaces/pages/WorkspaceMembersPage';
+import { WorkspaceSettingsPage } from '../features/workspaces/pages/WorkspaceSettingsPage';
 import { AppShell } from './layouts/AppShell';
 import { AuthLayout } from './layouts/AuthLayout';
 import { WorkspaceLayout } from './layouts/WorkspaceLayout';
@@ -37,11 +39,11 @@ export const router = createBrowserRouter([
               },
               {
                 path: 'settings',
-                element: <PlaceholderPage title="Workspace settings" />,
+                element: <WorkspaceSettingsPage />,
               },
               {
                 path: 'members',
-                element: <PlaceholderPage title="Workspace members" />,
+                element: <WorkspaceMembersPage />,
               },
               {
                 path: 'projects',

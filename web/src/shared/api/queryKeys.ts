@@ -9,4 +9,6 @@ export const qk = {
   workspaces: ['workspaces'] as const,
   projects: (workspaceId: string) =>
     ['workspaces', workspaceId, 'projects'] as const,
+  members: (workspaceId: string) =>
+    ['workspaces', workspaceId, 'members'] as const,
 };

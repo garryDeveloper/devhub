@@ -59,6 +59,7 @@ public static class ErrorResultExtensions
             ErrorType.Forbidden => (StatusCodes.Status403Forbidden, "Forbidden."),
             ErrorType.NotFound => (StatusCodes.Status404NotFound, "The resource was not found."),
             ErrorType.Conflict => (StatusCodes.Status409Conflict, "The request conflicts with the current state."),
+            ErrorType.UnprocessableEntity => (StatusCodes.Status422UnprocessableEntity, "The request cannot be applied."),
             ErrorType.TooManyRequests => (StatusCodes.Status429TooManyRequests, "Too many requests."),
             _ => throw new NotSupportedException($"Unhandled {nameof(ErrorType)}: {error.Type}."),
         };

@@ -185,8 +185,12 @@ An `ErrorBoundary` wraps each route element so a render crash degrades one scree
   API can set one, otherwise `localStorage` with the trade-off documented in DEVHUB-020.
 - `AuthProvider` bootstraps by calling `GET /api/me`; while pending it renders a splash, so
   protected routes never flash the login screen.
-- `<RequireAuth>` wraps the private route tree; `<RequireWorkspaceRole role="Owner">` guards
-  settings routes. Client-side guards are UX only — the API is the real authority.
+- `<RequireAuth>` wraps the private route tree. Owner-only screens (workspace settings, members)
+  are **not** route-guarded by role: any member can open them, and the page itself renders a
+  read-only view or hides mutation controls instead of a broken form (DEVHUB-028). A role route
+  guard would block the one thing these screens need to do for a non-owner — show them something
+  — so "hide the control, not the route" is the pattern every later owner-only screen follows
+  too. Client-side role checks are UX only either way — the API is the real authority.
 
 ---
 

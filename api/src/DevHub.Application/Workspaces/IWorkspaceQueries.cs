@@ -22,4 +22,14 @@ public interface IWorkspaceQueries
     /// The two are deliberately indistinguishable: both become the same 404.
     /// </summary>
     Task<WorkspaceDto?> GetForUserAsync(Guid workspaceId, Guid userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Every member of <paramref name="workspaceId"/>, ordered by when they joined — if
+    /// <paramref name="userId"/> is one of them. Any member may read the full list
+    /// (api-endpoints.md §2), so unlike the role-gated mutations this needs no
+    /// <c>IWorkspaceAccessService</c> round trip: membership is the only check, and the query
+    /// already makes it. Null for the same two indistinguishable reasons as
+    /// <see cref="GetForUserAsync"/>.
+    /// </summary>
+    Task<IReadOnlyList<MemberDto>?> ListMembersAsync(Guid workspaceId, Guid userId, CancellationToken cancellationToken);
 }

@@ -1,3 +1,4 @@
+using DevHub.Application.Users.Contracts;
 using DevHub.Application.Workspaces;
 using DevHub.Application.Workspaces.Contracts;
 using DevHub.Domain.Workspaces;
@@ -32,6 +33,45 @@ internal sealed class WorkspaceQueries(DevHubDbContext dbContext) : IWorkspaceQu
         return row is null ? null : ToDto(row);
     }
 
+    public async Task<IReadOnlyList<MemberDto>?> ListMembersAsync(Guid workspaceId, Guid userId, CancellationToken cancellationToken)
+    {
+        // The membership check and the list come from the same table, but as two queries rather
+        // than one: EF cannot express "this row exists, and also give me every row" as a single
+        // round trip without reading the target workspace's members twice over the wire anyway.
+        var isMember = await dbContext.Set<WorkspaceMember>()
+            .AsNoTracking()
+            .AnyAsync(member => member.WorkspaceId == workspaceId && member.UserId == userId, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (!isMember)
+        {
+            return null;
+        }
+
+        var rows = await dbContext.Set<WorkspaceMember>()
+            .AsNoTracking()
+            .Where(member => member.WorkspaceId == workspaceId)
+            .Join(
+                dbContext.Users,
+                member => member.UserId,
+                user => user.Id,
+                (member, user) => new MemberRow
+                {
+                    Id = member.Id,
+                    Role = member.Role,
+                    JoinedAt = member.JoinedAt,
+                    UserId = user.Id,
+                    Email = user.Email,
+                    DisplayName = user.DisplayName,
+                })
+            .OrderBy(row => row.JoinedAt)
+            .ThenBy(row => row.Id)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return [.. rows.Select(ToMemberDto)];
+    }
+
     /// <summary>
     /// One row per workspace the user is a member of, carrying <b>their</b> role. Starts from the
     /// membership — served by <c>ix_workspace_members_user_id</c> — and joins to the workspace.
@@ -58,6 +98,9 @@ internal sealed class WorkspaceQueries(DevHubDbContext dbContext) : IWorkspaceQu
     private static WorkspaceDto ToDto(WorkspaceRow row) =>
         new(row.Id, row.Name, row.Slug, row.Role.ToString(), row.MemberCount, row.CreatedAt);
 
+    private static MemberDto ToMemberDto(MemberRow row) =>
+        new(row.Id, new UserDto(row.UserId, row.Email, row.DisplayName, AvatarUrl: null), row.Role.ToString(), row.JoinedAt);
+
     private sealed class WorkspaceRow
     {
         public required Guid Id { get; init; }
@@ -71,5 +114,20 @@ internal sealed class WorkspaceQueries(DevHubDbContext dbContext) : IWorkspaceQu
         public required int MemberCount { get; init; }
 
         public required DateTimeOffset CreatedAt { get; init; }
+    }
+
+    private sealed class MemberRow
+    {
+        public required Guid Id { get; init; }
+
+        public required WorkspaceRole Role { get; init; }
+
+        public required DateTimeOffset JoinedAt { get; init; }
+
+        public required Guid UserId { get; init; }
+
+        public required string Email { get; init; }
+
+        public required string DisplayName { get; init; }
     }
 }

@@ -28,6 +28,8 @@ public sealed record Error(string Code, string Message, ErrorType Type)
 
     public static Error Conflict(string code, string message) => new(code, message, ErrorType.Conflict);
 
+    public static Error UnprocessableEntity(string code, string message) => new(code, message, ErrorType.UnprocessableEntity);
+
     public static Error Unauthorized(string code, string message) => new(code, message, ErrorType.Unauthorized);
 
     public static Error Forbidden(string code, string message) => new(code, message, ErrorType.Forbidden);
@@ -46,6 +48,12 @@ public enum ErrorType
 
     /// <summary>409.</summary>
     Conflict,
+
+    /// <summary>
+    /// 422. The request is well-formed and the caller may act on the resource, but the specific
+    /// change would break an invariant (e.g. demoting the last workspace owner).
+    /// </summary>
+    UnprocessableEntity,
 
     /// <summary>401. The caller could not be authenticated (bad credentials, bad token).</summary>
     Unauthorized,

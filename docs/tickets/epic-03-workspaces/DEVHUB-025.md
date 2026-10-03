@@ -21,21 +21,28 @@ email — email invitations for people without accounts are post-MVP.
 
 ## Tasks
 
-- [ ] `GET .../members` — any member may read the list (id, user summary, role, joinedAt).
-- [ ] `POST .../members { email, role }` — owner only; `404` if no such user, `409` if already a
+- [x] `GET .../members` — any member may read the list (id, user summary, role, joinedAt).
+      *Scoped entirely by `IWorkspaceQueries.ListMembersAsync`: no `IWorkspaceAccessService` call
+      needed, since membership is itself the only check a read needs.*
+- [x] `POST .../members { email, role }` — owner only; `404` if no such user, `409` if already a
       member.
-- [ ] `PATCH .../members/{memberId} { role }` — owner only; `422` when demoting the last owner.
-- [ ] `DELETE .../members/{memberId}` — owner only; `422` when removing the last owner; a member
+- [x] `PATCH .../members/{memberId} { role }` — owner only; `422` when demoting the last owner.
+- [x] `DELETE .../members/{memberId}` — owner only; `422` when removing the last owner; a member
       may remove themselves (leave).
+      *Authorized with `RequireMember`, not `RequireOwner`: the handler itself allows a non-owner
+      only when the target member is the caller.*
 - [ ] Removing a member also removes their project memberships in the same transaction.
-- [ ] Integration tests for each rule above, including "member leaves their own workspace".
+      *Deferred: `Project`/`ProjectMember` don't exist yet (EPIC 4 is unbuilt). Revisit in
+      DEVHUB-031/032.*
+- [x] Integration tests for each rule above, including "member leaves their own workspace".
 
 ## Acceptance criteria
 
-- [ ] An owner can add, promote, demote and remove members.
-- [ ] The last owner cannot be demoted or removed by any path.
+- [x] An owner can add, promote, demote and remove members.
+- [x] The last owner cannot be demoted or removed by any path.
 - [ ] A removed member immediately loses access to the workspace's projects and issues.
-- [ ] A non-owner attempting any mutation gets `403`.
+      *Not yet meaningfully testable — there are no projects to lose access to until EPIC 4.*
+- [x] A non-owner attempting any mutation gets `403`.
 
 ## Technical notes
 

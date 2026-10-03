@@ -100,10 +100,26 @@ Legend: 🔓 public · 🔒 authenticated · 👑 workspace `Owner` · 🪝 webh
 // name only, required (the slug is immutable; a slug in the body is ignored) · 400 errors.name
 // 404 not a member (as for GET) · 403 a member who is not an Owner (type …/errors/workspaces.owner_required)
 
-// POST .../members { "email": "ana@example.com", "role": "Member" }
-// 201 MemberDto · 404 user not found · 409 already a member
-// PATCH .../members/{id} { "role": "Owner" } · 422 cannot demote the last owner
-// DELETE .../members/{id} → 204 · 422 cannot remove the last owner
+// MemberDto — "id" is the membership's own id, distinct from "user.id"; that is what
+// PATCH/DELETE .../members/{id} address
+{ "id": "…", "user": { "id": "…", "email": "…", "displayName": "Ana", "avatarUrl": null },
+  "role": "Member", "joinedAt": "…" }
+
+// GET .../members → 200 MemberDto[]  any member may read it, ordered by joinedAt
+// 404 not a member OR workspace does not exist, same as GET /api/workspaces/{id}
+
+// POST .../members { "email": "ana@example.com", "role": "Member" }   owner only
+// 201 MemberDto · Location: .../members/{id}
+// 404 user_not_found — no DevHub account with that email · 409 already_member
+// 400 errors.email / errors.role — role must be exactly "Owner" or "Member"
+
+// PATCH .../members/{id} { "role": "Owner" }   owner only → 200 MemberDto
+// 404 member_not_found (the id is not a member of this workspace)
+// 422 last_owner — cannot demote the workspace's only Owner
+
+// DELETE .../members/{id} → 204   owner only, EXCEPT a member removing themselves (leave),
+// which needs no role at all
+// 404 member_not_found · 422 last_owner — cannot remove the workspace's only Owner
 ```
 
 ---

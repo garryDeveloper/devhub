@@ -323,8 +323,10 @@ public sealed class WorkspaceEndpointTests(DevHubApiFactory api) : IClassFixture
     }
 
     /// <summary>
-    /// Seeded through the aggregate, not an endpoint: adding members is DEVHUB-025. Going through
-    /// <see cref="Workspace.AddMember"/> still applies every domain rule a real request would.
+    /// Seeded through the aggregate rather than the <c>POST .../members</c> endpoint
+    /// (<see cref="MemberEndpointTests"/>), so these scoping tests don't need a second real user
+    /// account to invite by email. Going through <see cref="Workspace.AddMember"/> still applies
+    /// every domain rule a real request would.
     /// </summary>
     private Task AddMemberAsync(Guid workspaceId, Guid userId) =>
         api.QueryDbAsync(async db =>

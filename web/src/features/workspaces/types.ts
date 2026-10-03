@@ -10,3 +10,17 @@ export interface Workspace {
   memberCount: number;
   createdAt: string;
 }
+
+// Mirrors DevHub.Application.Workspaces.Contracts.MemberDto (api-endpoints.md §2).
+export interface Member {
+  /** The membership's own id — distinct from `user.id`. PATCH/DELETE address this one. */
+  id: string;
+  user: {
+    id: string;
+    email: string;
+    displayName: string;
+    avatarUrl: string | null;
+  };
+  role: WorkspaceRole;
+  joinedAt: string;
+}

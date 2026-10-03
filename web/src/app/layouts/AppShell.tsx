@@ -23,6 +23,8 @@ function primaryNav(workspace: Workspace | null): NavItem[] {
     ? [
         { to: `/w/${workspace.slug}`, label: 'Overview', icon: '⌂', end: true },
         { to: `/w/${workspace.slug}/projects`, label: 'Projects', icon: '▣' },
+        { to: `/w/${workspace.slug}/members`, label: 'Members', icon: '👥' },
+        { to: `/w/${workspace.slug}/settings`, label: 'Workspace settings', icon: '⚙' },
       ]
     : [];
 
