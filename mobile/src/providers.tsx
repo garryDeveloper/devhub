@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider } from './features/auth/context/AuthProvider';
+import { ActiveWorkspaceProvider } from './features/workspaces/context/ActiveWorkspaceProvider';
 
 // Defaults per docs/tech-specs/mobile-architecture.md §5: longer staleTime
 // than web because mobile networks are worse and screens are re-entered
@@ -18,11 +19,15 @@ const queryClient = new QueryClient({
 
 // AuthProvider sits inside QueryClientProvider: logout needs useQueryClient()
 // to clear the cache (auth-spec.md §4 "Client contract").
+// ActiveWorkspaceProvider sits inside AuthProvider: it reads `user` to scope the stored
+// selection per account (DEVHUB-029).
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <ActiveWorkspaceProvider>{children}</ActiveWorkspaceProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </SafeAreaProvider>
   );

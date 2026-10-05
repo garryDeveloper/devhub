@@ -1,5 +1,6 @@
 using DevHub.Application.Common;
 using DevHub.Application.Workspaces.Access;
+using DevHub.Domain.Projects;
 using DevHub.Domain.Workspaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,11 +27,24 @@ internal sealed class WorkspaceAccessService(DevHubDbContext dbContext, ICurrent
                 .Select(member => new WorkspaceAccess(member.WorkspaceId, null, member.Role))
                 .SingleOrDefaultAsync(cancellationToken));
 
+    public Task<WorkspaceAccess?> ForProjectAsync(Guid projectId, CancellationToken cancellationToken) =>
+        ResolveAsync("project", projectId, userId =>
+            // A single query that joins from the resource up to workspace_members for the
+            // caller. The projects table is still touched (unlike ForWorkspaceAsync): it is the
+            // only place that knows which workspace the project belongs to.
+            dbContext.Set<Project>()
+                .AsNoTracking()
+                .Where(project => project.Id == projectId)
+                .Join(
+                    dbContext.Set<WorkspaceMember>().Where(member => member.UserId == userId),
+                    project => project.WorkspaceId,
+                    member => member.WorkspaceId,
+                    (project, member) => new WorkspaceAccess(project.WorkspaceId, project.Id, member.Role))
+                .SingleOrDefaultAsync(cancellationToken));
+
     // Added by the ticket that creates each entity, with its cross-workspace 404 test. Each one
     // is a single query that joins from the resource up to workspace_members for the caller.
     //
-    // public Task<WorkspaceAccess?> ForProjectAsync(Guid projectId, CancellationToken cancellationToken) =>
-    //     throw new NotImplementedException("DEVHUB-030");
     // public Task<WorkspaceAccess?> ForIssueAsync(Guid issueId, CancellationToken cancellationToken) =>
     //     throw new NotImplementedException("DEVHUB-036");
     // public Task<WorkspaceAccess?> ForEnvironmentAsync(Guid environmentId, CancellationToken cancellationToken) =>

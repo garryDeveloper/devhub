@@ -1,6 +1,7 @@
 using System.Reflection;
 using DevHub.Application.Common;
 using DevHub.Domain.Common;
+using DevHub.Domain.Projects;
 using DevHub.Domain.Users;
 using DevHub.Domain.Workspaces;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +36,8 @@ public sealed class DevHubDbContext : DbContext
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     public DbSet<Workspace> Workspaces => Set<Workspace>();
+
+    public DbSet<Project> Projects => Set<Project>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

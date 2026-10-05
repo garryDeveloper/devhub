@@ -20,6 +20,13 @@ export function ProfileScreen() {
       <Text style={styles.title}>{user?.displayName ?? 'Me'}</Text>
       <Text style={styles.subtitle}>{user?.email}</Text>
       <Pressable
+        onPress={() => navigation.navigate('WorkspaceMembers')}
+        style={styles.link}
+        accessibilityRole="button"
+      >
+        <Text style={styles.linkText}>Workspace members</Text>
+      </Pressable>
+      <Pressable
         onPress={() => navigation.navigate('ApiHealth')}
         style={styles.link}
         accessibilityRole="button"

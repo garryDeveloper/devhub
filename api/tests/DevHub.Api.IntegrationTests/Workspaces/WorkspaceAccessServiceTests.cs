@@ -6,6 +6,7 @@ using System.Text.Json;
 using DevHub.Api.IntegrationTests.Harness;
 using DevHub.Application.Auth.Contracts;
 using DevHub.Application.Workspaces.Access;
+using DevHub.Domain.Projects;
 using DevHub.Domain.Workspaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -100,6 +101,62 @@ public sealed class WorkspaceAccessServiceTests(DevHubApiFactory api) : IClassFi
         Assert.Null(await AsUserAsync(owner.User.Id, service => service.ForWorkspaceAsync(workspaceId, default)));
     }
 
+    // ---- ForProjectAsync --------------------------------------------------------------------
+
+    [Fact]
+    public async Task ForProject_returns_the_creators_workspace_role()
+    {
+        var owner = await RegisterAsync();
+        var workspaceId = await CreateWorkspaceAsync(owner);
+        var projectId = await CreateProjectAsync(workspaceId, owner.User.Id);
+
+        var access = await AsUserAsync(owner.User.Id, service => service.ForProjectAsync(projectId, default));
+
+        Assert.Equal(new WorkspaceAccess(workspaceId, projectId, WorkspaceRole.Owner), access);
+    }
+
+    [Fact]
+    public async Task ForProject_returns_a_members_own_workspace_role()
+    {
+        var owner = await RegisterAsync();
+        var member = await RegisterAsync();
+        var workspaceId = await CreateWorkspaceAsync(owner);
+        await AddMemberAsync(workspaceId, member.User.Id);
+        var projectId = await CreateProjectAsync(workspaceId, owner.User.Id);
+
+        var access = await AsUserAsync(member.User.Id, service => service.ForProjectAsync(projectId, default));
+
+        Assert.Equal(WorkspaceRole.Member, access?.Role);
+        Assert.Equal(projectId, access?.ProjectId);
+    }
+
+    [Fact]
+    public async Task ForProject_returns_null_for_a_member_of_another_workspace()
+    {
+        var owner = await RegisterAsync();
+        var outsider = await RegisterAsync();
+        var workspaceId = await CreateWorkspaceAsync(owner);
+        var projectId = await CreateProjectAsync(workspaceId, owner.User.Id);
+
+        // The outsider is a member — of a different workspace. Owning a workspace elsewhere
+        // must grant nothing here.
+        await CreateWorkspaceAsync(outsider);
+
+        var access = await AsUserAsync(outsider.User.Id, service => service.ForProjectAsync(projectId, default));
+
+        Assert.Null(access);
+    }
+
+    [Fact]
+    public async Task ForProject_returns_null_for_a_project_that_does_not_exist()
+    {
+        var caller = await RegisterAsync();
+
+        var access = await AsUserAsync(caller.User.Id, service => service.ForProjectAsync(Guid.CreateVersion7(), default));
+
+        Assert.Null(access);
+    }
+
     // ---- Helpers ---------------------------------------------------------------------------
 
     /// <summary>
@@ -147,5 +204,16 @@ public sealed class WorkspaceAccessServiceTests(DevHubApiFactory api) : IClassFi
             var workspace = await db.Workspaces.Include(w => w.Members).SingleAsync(w => w.Id == workspaceId);
             workspace.AddMember(userId, WorkspaceRole.Member, DateTimeOffset.UtcNow);
             return await db.SaveChangesAsync();
+        });
+
+    /// <summary>Seeded through the aggregate: project endpoints are DEVHUB-031.</summary>
+    private Task<Guid> CreateProjectAsync(Guid workspaceId, Guid creatorId) =>
+        api.QueryDbAsync(async db =>
+        {
+            var key = $"PRJ{Guid.NewGuid():N}"[..10].ToUpperInvariant();
+            var project = Project.Create(workspaceId, "Access", key, creatorId, DateTimeOffset.UtcNow);
+            db.Add(project);
+            await db.SaveChangesAsync();
+            return project.Id;
         });
 }

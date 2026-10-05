@@ -25,10 +25,11 @@ public interface IWorkspaceAccessService
 {
     Task<WorkspaceAccess?> ForWorkspaceAsync(Guid workspaceId, CancellationToken cancellationToken);
 
+    Task<WorkspaceAccess?> ForProjectAsync(Guid projectId, CancellationToken cancellationToken);
+
     // Each resolver below is added by the ticket that creates its entity, together with its
     // cross-workspace 404 integration test. Uncomment and implement it there.
     //
-    // Task<WorkspaceAccess?> ForProjectAsync(Guid projectId, CancellationToken cancellationToken);         // DEVHUB-030
     // Task<WorkspaceAccess?> ForIssueAsync(Guid issueId, CancellationToken cancellationToken);             // DEVHUB-036
     // Task<WorkspaceAccess?> ForEnvironmentAsync(Guid environmentId, CancellationToken cancellationToken); // DEVHUB-062
     // Task<WorkspaceAccess?> ForDeploymentAsync(Guid deploymentId, CancellationToken cancellationToken);   // DEVHUB-066

@@ -8,6 +8,7 @@ import { IssueDetailScreen } from './screens/IssueDetailScreen';
 import { PlaceholderScreen } from './screens/PlaceholderScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { ProjectDetailScreen } from './screens/ProjectDetailScreen';
+import { WorkspaceMembersScreen } from './screens/WorkspaceMembersScreen';
 import type {
   AppTabParamList,
   HomeStackParamList,
@@ -15,6 +16,7 @@ import type {
   MeStackParamList,
   ProjectsStackParamList,
 } from './types';
+import { WorkspaceSelectorButton } from '../features/workspaces/components/WorkspaceSelectorButton';
 import { colors } from '../shared/theme/colors';
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
@@ -51,7 +53,13 @@ function IssuesTabNavigator() {
 function ProjectsTabNavigator() {
   return (
     <ProjectsStack.Navigator>
-      <ProjectsStack.Screen name="ProjectList" options={{ title: 'Projects' }}>
+      <ProjectsStack.Screen
+        name="ProjectList"
+        options={{
+          title: 'Projects',
+          headerRight: () => <WorkspaceSelectorButton />,
+        }}
+      >
         {() => <PlaceholderScreen title="Projects" />}
       </ProjectsStack.Screen>
       <ProjectsStack.Screen
@@ -80,6 +88,11 @@ function MeTabNavigator() {
         name="ApiHealth"
         component={ApiHealthScreen}
         options={{ title: 'API health' }}
+      />
+      <MeStack.Screen
+        name="WorkspaceMembers"
+        component={WorkspaceMembersScreen}
+        options={{ title: 'Members' }}
       />
     </MeStack.Navigator>
   );

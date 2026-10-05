@@ -13,6 +13,47 @@ export const USER = {
   avatarUrl: null,
 };
 
+// Fixtures for DEVHUB-029 (workspace selector + members). Two workspaces so switching is
+// observable, and two different member lists so a switch is provably a different fetch, not a
+// cached one.
+export const WORKSPACES = [
+  {
+    id: 'ws-1',
+    name: 'Acme',
+    slug: 'acme',
+    role: 'Owner',
+    memberCount: 1,
+    createdAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'ws-2',
+    name: 'Beta Co',
+    slug: 'beta-co',
+    role: 'Member',
+    memberCount: 1,
+    createdAt: '2026-01-02T00:00:00Z',
+  },
+];
+
+export const MEMBERS: Record<string, unknown[]> = {
+  'ws-1': [
+    { id: 'm-1', user: USER, role: 'Owner', joinedAt: '2026-01-01T00:00:00Z' },
+  ],
+  'ws-2': [
+    {
+      id: 'm-2',
+      user: {
+        id: '2',
+        email: 'other@example.com',
+        displayName: 'Other',
+        avatarUrl: null,
+      },
+      role: 'Member',
+      joinedAt: '2026-01-02T00:00:00Z',
+    },
+  ],
+};
+
 export interface FakeApi {
   calls: Record<string, number>;
   /** Bodies sent to POST /api/auth/logout, to assert which token was revoked. */
@@ -89,6 +130,12 @@ export function installFakeApi(): FakeApi {
       logoutBodies.push(JSON.parse(String(init?.body)));
       return new Response(null, { status: 204 });
     },
+
+    '/api/workspaces': (init) =>
+      bearer(init) === 'Bearer access-valid' ? json(WORKSPACES) : unauthorized(),
+
+    '/api/workspaces/ws-1/members': () => json(MEMBERS['ws-1']),
+    '/api/workspaces/ws-2/members': () => json(MEMBERS['ws-2']),
   };
 
   globalThis.fetch = jest.fn(

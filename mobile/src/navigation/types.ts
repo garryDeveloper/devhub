@@ -24,6 +24,7 @@ export type ProjectsStackParamList = {
 export type MeStackParamList = {
   Profile: undefined;
   ApiHealth: undefined;
+  WorkspaceMembers: undefined;
 };
 
 export type AppTabParamList = {
