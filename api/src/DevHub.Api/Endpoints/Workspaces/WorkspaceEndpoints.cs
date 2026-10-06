@@ -1,5 +1,8 @@
 using DevHub.Api.Extensions;
 using DevHub.Application.Common;
+using DevHub.Application.Projects.Contracts;
+using DevHub.Application.Projects.Create;
+using DevHub.Application.Projects.List;
 using DevHub.Application.Workspaces.Contracts;
 using DevHub.Application.Workspaces.Create;
 using DevHub.Application.Workspaces.Get;
@@ -36,6 +39,12 @@ public static class WorkspaceEndpoints
             .WithName("UpdateWorkspace")
             .ProducesProblem(StatusCodes.Status403Forbidden);
 
+        workspaces.MapPost("/{workspaceId:guid}/projects", CreateProjectAsync)
+            .WithName("CreateProject")
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
+        workspaces.MapGet("/{workspaceId:guid}/projects", ListProjectsAsync).WithName("ListProjects");
+
         var members = workspaces.MapGroup("/{workspaceId:guid}/members").WithTags("Workspace members");
 
         members.MapGet("", ListMembersAsync).WithName("ListWorkspaceMembers");
@@ -56,6 +65,37 @@ public static class WorkspaceEndpoints
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
         return api;
+    }
+
+    public sealed record CreateProjectRequest(string Name, string? Description, string Key, string? Color, string? Icon);
+    // POST { "name":"DevHub API", "key":"DEV", "description":"…", "color":"#4F46E5", "icon":"rocket" }
+    private static async Task<Results<Created<ProjectDto>, ProblemHttpResult>> CreateProjectAsync(
+        Guid workspaceId,
+        CreateProjectRequest requestDto,
+        ICommandHandler<CreateProjectCommand, Result<ProjectDto>> handler,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        var command = new CreateProjectCommand(workspaceId, requestDto.Name, requestDto.Description, requestDto.Key, requestDto.Color, requestDto.Icon);
+        var result = await handler.HandleAsync(command, cancellationToken);
+
+        return result.IsSuccess
+            ? TypedResults.Created($"/api/projects/{result.Value.Id}", result.Value)
+            : result.Error!.ToProblem(httpContext);
+    }
+
+    private static async Task<Results<Ok<IReadOnlyList<ProjectSummaryDto>>, ProblemHttpResult>> ListProjectsAsync(
+        Guid workspaceId,
+        IQueryHandler<ListProjectsQuery, Result<IReadOnlyList<ProjectSummaryDto>>> handler,
+        HttpContext httpContext,
+        CancellationToken cancellationToken,
+        bool includeArchived = false)
+    {
+        var result = await handler.HandleAsync(new ListProjectsQuery(workspaceId, includeArchived), cancellationToken);
+
+        return result.IsSuccess
+            ? TypedResults.Ok(result.Value)
+            : result.Error!.ToProblem(httpContext);
     }
 
     private static async Task<Results<Created<WorkspaceDto>, ProblemHttpResult>> CreateAsync(
