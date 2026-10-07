@@ -4,7 +4,7 @@ namespace DevHub.Application.Workspaces.Access;
 
 /// <summary>
 /// What the caller may do with one resource: the workspace it resolves to and the caller's role
-/// there. Only ever produced by <see cref="IWorkspaceAccessService"/>, from the resource id —
+/// there. Only ever produced by <see cref="IProjectAccessService"/>, from the resource id —
 /// never assembled from a <c>workspaceId</c> the client sent (auth-spec.md §5).
 /// </summary>
 /// <param name="ProjectId">

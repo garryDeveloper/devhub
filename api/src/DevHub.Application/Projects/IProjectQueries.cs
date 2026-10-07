@@ -27,4 +27,13 @@ public interface IProjectQueries
     /// the project itself is never checked here.
     /// </summary>
     Task<ProjectDto?> GetForUserAsync(Guid projectId, Guid userId, CancellationToken cancellationToken);
+
+
+    /// <summary>
+    /// Every member of <paramref name="projectId"/>. Null when the project does not exist, or
+    /// <paramref name="userId"/> is not a member of its workspace. Visibility rule (DEVHUB-032):
+    /// project membership only narrows who can be <i>assigned</i> issues — every workspace member
+    /// can read every project's member list, not just the project's own members.
+    /// </summary>
+    Task<IReadOnlyList<ProjectMemberDto>?> ListMemberAsync(Guid projectId, Guid userId, CancellationToken cancellationToken);
 }

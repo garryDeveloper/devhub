@@ -15,7 +15,7 @@ namespace DevHub.Application.Workspaces.Members.Remove;
 /// </remarks>
 public sealed class RemoveMemberHandler(
     ICurrentUser currentUser,
-    IWorkspaceAccessService accessService,
+    IProjectAccessService accessService,
     IWorkspaceRepository workspaces,
     IUnitOfWork unitOfWork)
     : ICommandHandler<RemoveMemberCommand, Result>

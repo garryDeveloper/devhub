@@ -16,4 +16,20 @@ public static class ProjectErrors
     /// never silently ignored, so the client finds out instead of assuming it worked.</summary>
     public static readonly Error KeyIsImmutable =
         Error.UnprocessableEntity("projects.key_immutable", "A project's key cannot be changed once it is created.");
+
+    /// <summary>The user being added is not a member of the project's workspace
+    /// (domain-model.md, DEVHUB-032): project membership only narrows workspace membership,
+    /// it never extends it.</summary>
+    public static readonly Error NotWorkspaceMember =
+        Error.UnprocessableEntity(
+            "projects.not_workspace_member",
+            "The user must be a member of the workspace before joining this project.");
+
+    public static readonly Error AlreadyMember =
+        Error.Conflict("projects.already_member", "This user is already a member of the project.");
+
+    /// <summary>The member id does not belong to this project. Safe to say so (unlike
+    /// <see cref="NotFound"/>): the caller already knows the project exists.</summary>
+    public static readonly Error MemberNotFound =
+        Error.NotFound("projects.member_not_found", "The member was not found.");
 }

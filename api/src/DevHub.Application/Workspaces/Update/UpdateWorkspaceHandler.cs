@@ -5,12 +5,12 @@ using DevHub.Application.Workspaces.Contracts;
 namespace DevHub.Application.Workspaces.Update;
 
 /// <summary>
-/// Renames a workspace (DEVHUB-024). Authorization is <see cref="IWorkspaceAccessService"/>'s
+/// Renames a workspace (DEVHUB-024). Authorization is <see cref="IProjectAccessService"/>'s
 /// (DEVHUB-026): scope first — a non-member gets 404, exactly as if the workspace did not exist —
 /// then role — a member who is not an owner gets 403, safe now because they already know it exists.
 /// </summary>
 public sealed class UpdateWorkspaceHandler(
-    IWorkspaceAccessService accessService,
+    IProjectAccessService accessService,
     IWorkspaceRepository workspaces,
     IUnitOfWork unitOfWork)
     : ICommandHandler<UpdateWorkspaceCommand, Result<WorkspaceDto>>

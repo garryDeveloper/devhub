@@ -11,7 +11,7 @@ namespace DevHub.Application.Projects.Update;
 /// never leaves a partial update staged.
 /// </summary>
 public sealed class UpdateProjectHandler(
-    IWorkspaceAccessService accessService,
+    IProjectAccessService accessService,
     IProjectRepository projects,
     IUnitOfWork unitOfWork)
     : ICommandHandler<UpdateProjectCommand, Result<ProjectDto>>

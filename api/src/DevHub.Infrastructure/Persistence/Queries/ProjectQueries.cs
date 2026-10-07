@@ -1,5 +1,7 @@
 using DevHub.Application.Projects;
 using DevHub.Application.Projects.Contracts;
+using DevHub.Application.Users.Contracts;
+using DevHub.Application.Workspaces.Contracts;
 using DevHub.Domain.Projects;
 using DevHub.Domain.Workspaces;
 using Microsoft.EntityFrameworkCore;
@@ -73,5 +75,74 @@ internal sealed class ProjectQueries(DevHubDbContext dbContext) : IProjectQuerie
             .ConfigureAwait(false);
 
         return dto;
+    }
+
+    public async Task<IReadOnlyList<ProjectMemberDto>?> ListMemberAsync(Guid projectId, Guid userId, CancellationToken cancellationToken)
+    {
+        // Visibility is workspace membership, not project membership (domain-model.md,
+        // DEVHUB-032): project membership only narrows who can be assigned issues, it never
+        // narrows who can read the project — same rule GetForUserAsync applies above.
+        var workspaceId = await dbContext.Set<Project>()
+            .AsNoTracking()
+            .Where(project => project.Id == projectId)
+            .Select(project => (Guid?)project.WorkspaceId)
+            .SingleOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (workspaceId is null)
+        {
+            return null;
+        }
+
+        var isWorkspaceMember = await dbContext.Set<WorkspaceMember>()
+            .AsNoTracking()
+            .AnyAsync(member => member.WorkspaceId == workspaceId && member.UserId == userId, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (!isWorkspaceMember)
+        {
+            return null;
+        }
+
+        var rows = await dbContext.Set<ProjectMember>()
+            .AsNoTracking()
+            .Where(member => member.ProjectId == projectId)
+            .Join(
+                dbContext.Users,
+                member => member.UserId,
+                user => user.Id,
+                (member, user) => new MemberRow
+                {
+                    Id = member.Id,
+                    Role = member.Role,
+                    AddedAt = member.AddedAt,
+                    UserId = user.Id,
+                    Email = user.Email,
+                    DisplayName = user.DisplayName,
+                })
+            .OrderBy(row => row.AddedAt)
+            .ThenBy(row => row.Id)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return [.. rows.Select(ToMemberDto)];
+    }
+
+    private static ProjectMemberDto ToMemberDto(MemberRow row) =>
+        new(row.Id, new UserDto(row.UserId, row.Email, row.DisplayName, AvatarUrl: null), row.Role.ToString(), row.AddedAt);
+
+    private sealed class MemberRow
+    {
+        public required Guid Id { get; init; }
+
+        public required ProjectRole Role { get; init; }
+
+        public required DateTimeOffset AddedAt { get; init; }
+
+        public required Guid UserId { get; init; }
+
+        public required string Email { get; init; }
+
+        public required string DisplayName { get; init; }
     }
 }

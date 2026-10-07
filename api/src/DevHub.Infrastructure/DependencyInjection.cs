@@ -181,6 +181,6 @@ public static class DependencyInjection
         services.AddScoped<IProjectQueries, ProjectQueries>();
 
         // Scoped, never singleton: it caches answers for one request and one ICurrentUser.
-        services.AddScoped<IWorkspaceAccessService, WorkspaceAccessService>();
+        services.AddScoped<IProjectAccessService, WorkspaceAccessService>();
     }
 }

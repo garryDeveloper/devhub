@@ -11,7 +11,7 @@ public sealed class CreateProjectHandler(
     ICurrentUser currentUser,
     ITimeProvider timeProvider,
     IProjectRepository projectRepository,
-    IWorkspaceAccessService workspaceAccessService)
+    IProjectAccessService workspaceAccessService)
     : ICommandHandler<CreateProjectCommand, Result<ProjectDto>>
 {
     private const string KeyIndex = "ix_projects_workspace_id_key";

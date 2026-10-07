@@ -8,7 +8,7 @@ namespace DevHub.Application.Projects.Archive;
 /// archives an already-archived project almost certainly raced another request, not a client bug
 /// worth a typed error — it is left to surface as the generic domain exception.</summary>
 public sealed class ArchiveProjectHandler(
-    IWorkspaceAccessService accessService,
+    IProjectAccessService accessService,
     IProjectRepository projects,
     ITimeProvider timeProvider,
     IUnitOfWork unitOfWork)

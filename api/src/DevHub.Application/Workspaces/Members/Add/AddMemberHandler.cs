@@ -13,7 +13,7 @@ namespace DevHub.Application.Workspaces.Members.Add;
 /// state in the MVP: the user is a member the moment this succeeds.
 /// </summary>
 public sealed class AddMemberHandler(
-    IWorkspaceAccessService accessService,
+    IProjectAccessService accessService,
     IWorkspaceRepository workspaces,
     IUserRepository users,
     ITimeProvider timeProvider,

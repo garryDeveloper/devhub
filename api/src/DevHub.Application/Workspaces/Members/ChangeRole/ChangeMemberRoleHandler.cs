@@ -14,7 +14,7 @@ namespace DevHub.Application.Workspaces.Members.ChangeRole;
 /// future caller that skips this handler cannot bypass the rule.
 /// </summary>
 public sealed class ChangeMemberRoleHandler(
-    IWorkspaceAccessService accessService,
+    IProjectAccessService accessService,
     IWorkspaceRepository workspaces,
     IUserRepository users,
     IUnitOfWork unitOfWork)

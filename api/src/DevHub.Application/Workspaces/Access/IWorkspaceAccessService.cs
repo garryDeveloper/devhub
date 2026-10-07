@@ -21,7 +21,7 @@ namespace DevHub.Application.Workspaces.Access;
 /// </item>
 /// </list>
 /// </remarks>
-public interface IWorkspaceAccessService
+public interface IProjectAccessService
 {
     Task<WorkspaceAccess?> ForWorkspaceAsync(Guid workspaceId, CancellationToken cancellationToken);
 

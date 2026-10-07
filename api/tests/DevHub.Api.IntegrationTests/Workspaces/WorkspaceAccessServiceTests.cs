@@ -15,7 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace DevHub.Api.IntegrationTests.Workspaces;
 
 /// <summary>
-/// DEVHUB-026: <see cref="IWorkspaceAccessService"/> against a real PostgreSQL. One section per
+/// DEVHUB-026: <see cref="IProjectAccessService"/> against a real PostgreSQL. One section per
 /// resolver; each later resolver (DEVHUB-030, 036, 062, 066, 072, 077) adds its own, and each must
 /// prove that a user from another workspace gets null — the 404 — for that resource type.
 /// </summary>
@@ -163,7 +163,7 @@ public sealed class WorkspaceAccessServiceTests(DevHubApiFactory api) : IClassFi
     /// Runs <paramref name="act"/> as one "request" of <paramref name="userId"/>: a fresh DI scope
     /// with an HttpContext carrying the <c>sub</c> claim, which is exactly what ICurrentUser reads.
     /// </summary>
-    private async Task<T> AsUserAsync<T>(Guid userId, Func<IWorkspaceAccessService, Task<T>> act)
+    private async Task<T> AsUserAsync<T>(Guid userId, Func<IProjectAccessService, Task<T>> act)
     {
         await using var scope = api.Services.CreateAsyncScope();
         var accessor = scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>();
@@ -174,7 +174,7 @@ public sealed class WorkspaceAccessServiceTests(DevHubApiFactory api) : IClassFi
 
         try
         {
-            return await act(scope.ServiceProvider.GetRequiredService<IWorkspaceAccessService>());
+            return await act(scope.ServiceProvider.GetRequiredService<IProjectAccessService>());
         }
         finally
         {

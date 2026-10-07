@@ -3,8 +3,16 @@ using DevHub.Application.Common;
 using DevHub.Application.Projects.Archive;
 using DevHub.Application.Projects.Contracts;
 using DevHub.Application.Projects.Get;
+using DevHub.Application.Projects.Members.Add;
+using DevHub.Application.Projects.Members.List;
+using DevHub.Application.Projects.Members.Remove;
 using DevHub.Application.Projects.Update;
+using DevHub.Application.Workspaces.Contracts;
+using DevHub.Application.Workspaces.Members.Add;
+using DevHub.Application.Workspaces.Members.List;
+using DevHub.Domain.Workspaces;
 using Microsoft.AspNetCore.Http.HttpResults;
+using static DevHub.Api.Endpoints.Workspaces.WorkspaceEndpoints;
 
 namespace DevHub.Api.Endpoints.Projects;
 
@@ -31,7 +39,62 @@ public static class ProjectEndpoints
             .WithName("ArchiveProject")
             .ProducesProblem(StatusCodes.Status403Forbidden);
 
+        var members = projects.MapGroup("/{projectId:guid}/members").WithTags("Project members");
+
+        members.MapGet("", ListMembersAsync).WithName("ListProjectMembers");
+        members.MapPost("", AddMemberAsync)
+            .WithName("AddProjectMember")
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
+        members.MapDelete("/{memberId:guid}", RemoveMemberAsync)
+            .WithName("RemoveProjectMember")
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         return api;
+    }
+
+    private static async Task<Results<Ok<IReadOnlyList<ProjectMemberDto>>, ProblemHttpResult>> ListMembersAsync(
+        Guid projectId,
+        IQueryHandler<ListProjectMembersQuery, Result<IReadOnlyList<ProjectMemberDto>>> handler,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(new ListProjectMembersQuery(projectId), cancellationToken);
+
+        return result.IsSuccess
+            ? TypedResults.Ok(result.Value)
+            : result.Error!.ToProblem(httpContext);
+    }
+
+    private static async Task<Results<Created<ProjectMemberDto>, ProblemHttpResult>> AddMemberAsync(
+        Guid projectId,
+        AddProjectMemberRequest request,
+        ICommandHandler<AddProjectMemberCommand, Result<ProjectMemberDto>> handler,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(new AddProjectMemberCommand(projectId, request.UserId), cancellationToken);
+
+        return result.IsSuccess
+            ? TypedResults.Created($"/api/projects/{projectId}/members/{result.Value.Id}", result.Value)
+            : result.Error!.ToProblem(httpContext);
+    }
+
+    private static async Task<Results<NoContent, ProblemHttpResult>> RemoveMemberAsync(
+        Guid projectId,
+        Guid memberId,
+        ICommandHandler<RemoveProjectMemberCommand, Result> handler,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(new RemoveProjectMemberCommand(projectId, memberId), cancellationToken);
+
+        return result.IsSuccess
+            ? TypedResults.NoContent()
+            : result.Error!.ToProblem(httpContext);
     }
 
     private static async Task<Results<Ok<ProjectDto>, ProblemHttpResult>> GetAsync(
@@ -87,4 +150,6 @@ public static class ProjectEndpoints
             ? TypedResults.NoContent()
             : result.Error!.ToProblem(httpContext);
     }
+
+    public sealed record AddProjectMemberRequest(Guid UserId);
 }

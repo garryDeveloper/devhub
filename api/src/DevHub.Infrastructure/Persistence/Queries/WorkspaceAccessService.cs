@@ -7,12 +7,12 @@ using Microsoft.EntityFrameworkCore;
 namespace DevHub.Infrastructure.Persistence.Queries;
 
 /// <summary>
-/// <see cref="IWorkspaceAccessService"/> as one projected query per resolver. Scoped: the cache
+/// <see cref="IProjectAccessService"/> as one projected query per resolver. Scoped: the cache
 /// below lives exactly as long as the request, so a handler (or a handler and a filter) asking
 /// twice about the same resource costs one query, and nothing leaks between requests or users.
 /// </summary>
 internal sealed class WorkspaceAccessService(DevHubDbContext dbContext, ICurrentUser currentUser)
-    : IWorkspaceAccessService
+    : IProjectAccessService
 {
     private readonly Dictionary<(string Resource, Guid Id), WorkspaceAccess?> _cache = [];
 
